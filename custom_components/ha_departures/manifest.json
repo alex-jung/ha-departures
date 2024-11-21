@@ -5,6 +5,10 @@
   "issue_tracker": "https://github.com/alex-jung/ha-departures/issues",
   "dependencies": [],
   "config_flow": true,
-  "codeowners": ["@alex-jung"],
-  "requirements": []
+  "codeowners": [
+    "@alex-jung"
+  ],
+  "iot_class": "cloud_polling",
+  "requirements": ["pyhafas=0.6.0"],
+  "version": "0.0.1"
 }
