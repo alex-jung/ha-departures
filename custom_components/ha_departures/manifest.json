@@ -1,14 +1,14 @@
 {
   "domain": "ha_departures",
   "name": "Public Transport Departures",
-  "documentation": "https://github.com/alex-jung/ha-departures",
-  "issue_tracker": "https://github.com/alex-jung/ha-departures/issues",
-  "dependencies": [],
-  "config_flow": true,
   "codeowners": [
     "@alex-jung"
   ],
+  "config_flow": true,
+  "documentation": "https://github.com/alex-jung/ha-departures",
+  "integration_type": "hub",
   "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/alex-jung/ha-departures/issues",  
   "requirements": ["pyhafas=0.6.0"],
   "version": "0.0.1"
 }
