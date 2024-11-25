@@ -5,8 +5,8 @@
         "title": "Public Transport Departures",
         "description": "If you need help with the configuration have a look here: https://github.com/alex-jung/ha-departures",
         "data": {
-          "username": "Username",
-          "password": "Password"
+          "profile": "Profile",
+          "station_name": "Haltestellenname"
         }
       }
     },
