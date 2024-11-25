@@ -1,11 +1,14 @@
 """Constants for Public Transport Departures."""
+
 # Base component constants
+from enum import StrEnum
+
+
 NAME = "Public Transport Departures"
 DOMAIN = "ha_departures"
 DOMAIN_DATA = f"{DOMAIN}_data"
 VERSION = "0.0.1"
 
-ATTRIBUTION = "Data provided by http://jsonplaceholder.typicode.com/"
 ISSUE_URL = "https://github.com/alex-jung/ha-departures/issues"
 
 # Icons
@@ -25,6 +28,20 @@ PLATFORMS = [BINARY_SENSOR, SENSOR, SWITCH]
 CONF_ENABLED = "enabled"
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
+
+CONF_STATION = "station_name"
+CONF_PROFILE = "profile"
+
+
+# Enums
+class PROFILES(StrEnum):
+    DB = "Deutsche Bahn"
+    KVB = "Kölner Verkehrsvetrieb"
+    NASA = "Nahverkehr Sachsen-Anhalt"
+    NVV = "Nordhessischer Verkehrs Verbund"
+    VSN = "Verkehrsverbund Süd-Niedersachsen"
+    VVV = " Verkehrsverbund Vorarlberg"
+
 
 # Defaults
 DEFAULT_NAME = DOMAIN
