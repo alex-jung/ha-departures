@@ -9,6 +9,6 @@
   "integration_type": "hub",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/alex-jung/ha-departures/issues",
-  "requirements": ["pytz>=2013.6", "pycryptodome~=3.9.8"],
+  "requirements": ["pytz>=2013.6", "apyefa==0.0.2"],
   "version": "0.0.1"
 }

@@ -1,0 +1,49 @@
+{
+  "config":
+  {
+    "step":
+    {
+      "user": {
+        "title": "Public Transport Departures",
+        "description": "Please select EFA connection and enter stop name:",
+        "data": {
+          "endpoint": "EFA Endpoint",
+          "stop_name": "Stop name"
+        }
+      },
+      "stop": {
+        "title": "Public Transport Departures",
+        "description": "Select stop:",
+        "data": {
+          "stop_name": "Stop name"
+        }
+      },
+      "lines": {
+        "title": "Public Transport Departures",
+        "description": "Select routes to monitor:",
+        "data": {
+          "lines": "Routes"
+        }
+      }
+    },
+    "error": {
+      "no_stop_found": "No locations found",
+      "invalid_api_response": "Received invalid response from EFA endpoint",
+      "connection_failed": "Connection to EFA endpoint failed"
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_location%]"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+          "title": "Public Transport Departures",
+          "description": "Select routes to monitor:",
+          "data": {
+            "lines": "Routes"
+          }
+      }
+    }
+  }
+}

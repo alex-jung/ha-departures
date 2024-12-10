@@ -3,28 +3,44 @@
     "step": {
       "user": {
         "title": "Public Transport Departures",
-        "description": "If you need help with the configuration have a look here: https://github.com/alex-jung/ha-departures",
+        "description": "Bitte EFA Endpoint auswählen und Haltestellenname eingeben:",
         "data": {
-          "profile": "Profile",
-          "station_name": "Haltestellenname"
+          "endpoint": "EFA Endpoint",
+          "stop_name": "Haltestellenname"
+        }
+      },
+      "stop": {
+        "title": "Public Transport Departures",
+        "description": "Wählen Sie die gewünschte Haltestelle aus:",
+        "data": {
+          "stop_name": "Haltestelle"
+        }
+      },
+      "lines": {
+        "title": "Public Transport Departures",
+        "description": "Bitte die Verbindungen auswählen, die überwacht werden:",
+        "data": {
+          "lines": "Verbindungen"
         }
       }
     },
     "error": {
-      "auth": "Username/Password is wrong."
+      "no_stop_found": "Keine zutreffende Haltestelle gefunden",
+      "invalid_api_response": "EFA Endpoint ungültige Antwort",
+      "connection_failed": "Verbindung zu EFA Endpoint fehlgeschlagen"
     },
     "abort": {
-      "single_instance_allowed": "Only a single instance is allowed."
+      "already_configured": "[%key:common::config_flow::abort::already_configured_location%]"
     }
   },
   "options": {
     "step": {
-      "user": {
-        "data": {
-          "binary_sensor": "Binary sensor enabled",
-          "sensor": "Sensor enabled",
-          "switch": "Switch enabled"
-        }
+      "init": {
+          "title": "Public Transport Departures",
+          "description": "Bitte die Verbindungen auswählen, die überwacht werden:",
+          "data": {
+            "lines": "Verbindungen"
+          }
       }
     }
   }
