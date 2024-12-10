@@ -1,0 +1,14 @@
+{
+  "domain": "ha_departures",
+  "name": "Public Transport Departures",
+  "codeowners": [
+    "@alex-jung"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/alex-jung/ha-departures",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/alex-jung/ha-departures/issues",
+  "requirements": ["pytz>=2013.6", "apyefa==0.0.2"],
+  "version": "0.0.1"
+}
