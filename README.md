@@ -114,5 +114,5 @@ entities:
 Result looks like there:\
 ![ezgif-3-136a167cd5](https://github.com/user-attachments/assets/3b8b8a09-1067-4d90-924a-729616c6e765)
 
-### Option 3 (vgn-departures-card)
+### Option 3 (ha-departures-card)
 > Development is ongoing
