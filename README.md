@@ -24,8 +24,8 @@ Until it's finished you can install the integration by adding this repository as
 
 1. Using the tool of choice open the directory (folder) for your HA configuration (where you find `configuration.yaml`).
 1. If you do not have a `custom_components` directory (folder) there, you need to create it.
-1. In the `custom_components` directory (folder) create a new folder called `vgn_departures`.
-1. Download all the files from the `custom_components/vgn_departures/` directory (folder) in this repository.
+1. In the `custom_components` directory (folder) create a new folder called `ha_departures`.
+1. Download all the files from the `custom_components/ha_departures/` directory (folder) in this repository.
 1. Place the files you downloaded in the new directory (folder) you created.
 1. Restart Home Assistant
 
@@ -39,23 +39,34 @@ The configuration of integration is made via Home Assistant GUI
 4. Click on integration to start [configuration dialog](#Configure-a-new-station)
 
 ### Configure a new station
-Integration will load all available stations from GTFS data source.
-> NOTE: if your station is not present in the station list, integration will unfortunately not work 
+#### Step 1 - Choose the API endpoint providing departures information and enter stop name 
+> Currently is only `Verkehrsverbund Großraum Nürnberg` is supported. If you know an endpoint for you region, let me know. I will add the endpoint to the list.
 
-Start enter your station name in field to reduce the list and then choose station you are interesting in from the list:\
-![image](https://github.com/user-attachments/assets/e65635ec-2bc6-4eba-b73d-7b476bea1049)
+![image](https://github.com/user-attachments/assets/6341bb9c-58b1-4d94-bfc5-277dea779d37)
 
-In the next step you can select directions splitted by transport types and trip names:
-![image](https://github.com/user-attachments/assets/96f402dd-a5c6-44d2-ad61-677adf38f7fe)
 
-As result new sensor(s) will be created:
-![image](https://github.com/user-attachments/assets/39ca6db8-8660-410d-9e2b-e4a92e055609)
+#### Step 2 - Choose stop
+> In this step `ha-departures` integration will search for all locations matching provided stop name.
+> Please select one of them from the list 
+
+![image](https://github.com/user-attachments/assets/88ca190f-b6dd-426d-b0ed-62929282645f)
+
+#### Step 3 - Choose the connections
+> You will get list of connections provided by the API for selected stop
+> Select all connection(s) you are interesting in and click on `OK`
+
+![image](https://github.com/user-attachments/assets/2e51a94b-ef8a-4422-8e3b-dec921a1a366)
+
+As result a new `Hub` is created incl. new sensor(s) for each direction you selected in previous step:
+![image](https://github.com/user-attachments/assets/e3d4de2c-adda-4414-8f8a-d8c52e0bdd38)
+
+![image](https://github.com/user-attachments/assets/7a54e888-df7f-4098-a644-f93279f043d7)
 
 ### Reconfigure an entry
-The directions you choosen in the [previous step](#Configure-a-new-station) can be reconfigured via GUI:
-![image](https://github.com/user-attachments/assets/03864ffd-2420-4ca0-97e8-03d64f0189ae)
+You can any time add or remove connections to existing `hub's` (stop locations)
+![image](https://github.com/user-attachments/assets/425685e2-743d-45ea-90da-7ef2b31b177e)
 
-Here you can remove obsolete directions or add new by selection them in dialog.
+Just click on `configure` button, select or deselct the connections and click on `OK`, Integration will remove obsolete and add new connections to the Home Assistant.
 
 ## Usage in dashboard
 
