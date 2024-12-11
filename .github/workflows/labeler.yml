@@ -1,20 +1,12 @@
-name: Manage labels
-
+name: "Pull Request Labeler"
 on:
-  push:
-    branches:
-      - main
-      - master
+- pull_request_target
 
 jobs:
   labeler:
-    name: Labeler
+    permissions:
+      contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the repository
-        uses: actions/checkout@v4.2.2
-
-      - name: Run Labeler
-        uses: crazy-max/ghaction-github-labeler@v5.1.0
-        with:
-          skip-delete: true
+    - uses: actions/labeler@v5
