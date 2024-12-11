@@ -6,10 +6,7 @@
 
 ![Big_512](https://github.com/user-attachments/assets/67e3ba87-94ea-4d27-b891-f6cbab779830)
 
-This integration provides information about next departure(s) for different transport types like Bus, Subway, Tram etc.
-
-> The currently release uses only **static time plans** extracted from [GTFS](https://gtfs.org/documentation/schedule/reference/) files.
-> Implementation of real time departures (e.g. via REST-API) is ongoing and will be available first in releases greater 2.0.0
+This integration provides information about next departures for different public transport types like Bus, Subway, Tram etc.
 
 ***
 ## Installation
