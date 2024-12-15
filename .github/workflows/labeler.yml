@@ -12,3 +12,4 @@ jobs:
     - uses: actions/labeler@v5
       with:
         configuration-path: .github/labeler.yml
+        dot: true
