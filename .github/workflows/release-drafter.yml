@@ -12,4 +12,4 @@ jobs:
       - name: Run release-drafter
         uses: release-drafter/release-drafter@v6.0.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.API_TOKEN }}
