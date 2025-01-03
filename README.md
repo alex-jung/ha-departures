@@ -3,7 +3,9 @@
 ![GitHub Release](https://img.shields.io/github/v/release/alex-jung/ha-departures)
 ![GitHub License](https://img.shields.io/github/license/alex-jung/ha-departures)
 
-![Big_512](https://github.com/user-attachments/assets/67e3ba87-94ea-4d27-b891-f6cbab779830)
+<p align="center">
+  <img width="300" src="https://github.com/user-attachments/assets/67e3ba87-94ea-4d27-b891-f6cbab779830"/>
+</p>
 
 This integration provides information about next departures for different public transport types like Bus, Subway, Tram etc.
 
@@ -14,20 +16,64 @@ The `Public Transport Departures` integration uses EFA (Elektronische Fahrplanau
 
 ### Supported EFA endpoints
 There is a list of known endpoints (will be updated continuously with each release)
+> [!IMPORTANT]
 > If more EFA endpoints are known to you, please write me a short messge or create a new issue with URL. After a check I will add them to supported API's.
 
-#### Baden-Württemberg
-| Name | API URL | Supports realtime |
-|--------|------|:---------------------:|
-|Verkehrsverbund Rhein-Neckar (VRN)| https://www.vrn.de/mngvrn/ |:x:|
-|Verkehrs- und Tarifverbund Stuttgart (VVS)|https://www3.vvs.de/mngvvs/|:x:|
+<table>
+    <tr>
+      <th>Name</th>
+      <th>API Url</th>
+      <th>Supports real time</th>
+    </tr>
+  <tr><td colspan="3" align="center"><b>Baden-Württemberg</b></td></tr>
+  <tr>
+    <td>Verkehrsverbund Rhein-Neckar (VRN)</td>
+    <td>https://www.vrn.de/mngvrn/</td>
+    <td align="center">❌</td>
+  </tr>
+  <tr>
+    <td>Verkehrs- und Tarifverbund Stuttgart (VVS)</td>
+    <td>https://www3.vvs.de/mngvvs/</td>
+    <td align="center">❌</td>
+  </tr>
+  <tr><td colspan="3" align="center"><b>Bayern</b></td></tr>
+  <tr>
+    <td>MoBY (Bahnland Bayern)</td>
+    <td>https://bahnland-bayern.de/efa/</td>
+    <td align="center">✅</td>
+  </tr>
+  <tr>
+    <td>Regensburger Verkehrsverbund (RVV)</td>
+    <td>https://efa.rvv.de/efa/</td>
+    <td align="center">❌</td>
+  </tr>
+  <tr>
+    <td>Verkehrsverbund Großraum Nürnberg (VGN)</td>
+    <td>https://efa.vgn.de/vgnExt_oeffi/</td>
+    <td align="center">❌</td>
+  </tr>
+</table>
 
-#### Bayern
+
+#### Mecklenburg-Vorpommern
 | Name | API URL | Supports realtime |
 |--------|------|:---------------------:|
-|MoBY (Bahnland Bayern)|https://bahnland-bayern.de/efa/|:white_check_mark:|
-|Regensburger Verkehrsverbund (RVV)|https://efa.rvv.de/efa/|:x:|
-|Verkehrsverbund Großraum Nürnberg (VGN)| https://efa.vgn.de/vgnExt_oeffi/ |:x:|
+|Verkehrsgesellschaft Mecklenburg-Vorpommern mbH (VMV)|https://fahrplanauskunft-mv.de/vmv-efa/|TBD|
+
+#### Nordrhein-Westfalen
+| Name | API URL | Supports realtime |
+|--------|------|:---------------------:|
+|Der WestfalenTarif|https://www.westfalenfahrplan.de/nwl-efa|TBD|
+
+#### Rheinland-Pfalz
+| Name | API URL | Supports realtime |
+|--------|------|:---------------------:|
+|Rolph.de|https://mandanten.vrn.de/takt2/|TBD|
+
+#### Sachsen
+| Name | API URL | Supports realtime |
+|--------|------|:---------------------:|
+|Verkehrsverbund Mittelsachsen GmbH (VMS)|https://efa.vvo-online.de/VMSSL3/|TBD|
 
 ## Installation
 
