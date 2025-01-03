@@ -6,11 +6,9 @@ from typing import Final
 NAME = "Public Transport Departures"
 DOMAIN = "ha_departures"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.0.1"
+VERSION = "1.0.0"
 
 ISSUE_URL = "https://github.com/alex-jung/ha-departures/issues"
-
-# Device classes
 
 # Platforms
 SENSOR = "sensor"
@@ -39,12 +37,16 @@ ATTR_DEPARTURES: Final = "departures"
 ATTR_DELAY: Final = "delay"
 ATTR_OCCUPANCY_LEVEL: Final = "occupancy_level"
 ATTR_PLANNED_DEPARTURE_TIME: Final = "planned_departure_time"
-ATTR_ACTUAL_DEPARTURE_TIME: Final = "actual_departure_time"
+ATTR_ESTIMATED_DEPARTURE_TIME: Final = "estimated_departure_time"
 
 
 # Endpoints
 EFA_ENDPOINTS: Final = {
-    "Verkehrsverbund Großraum Nürnberg(VGN)": "https://efa.vgn.de/vgnExt_oeffi/"
+    "MoBY (Bahnland Bayern)": "https://bahnland-bayern.de/efa/",
+    "Regensburger Verkehrsverbund (RVV)": "https://efa.rvv.de/efa/",
+    "Verkehrsverbund Großraum Nürnberg (VGN)": "https://efa.vgn.de/vgnExt_oeffi/",
+    "Verkehrsverbund Rhein-Neckar (VRN)": "https://www.vrn.de/mngvrn/",
+    "Verkehrs- und Tarifverbund Stuttgart (VVS)": "https://www3.vvs.de/mngvvs/",
 }
 
 

@@ -3,7 +3,8 @@
 from copy import deepcopy
 import logging
 
-from apyefa import EfaClient, Line, Location, LocationFilter
+from aiohttp import ConnectionTimeoutError
+from apyefa import EfaClient, Line, LineRequestType, Location, LocationFilter
 from apyefa.exceptions import EfaConnectionError, EfaResponseInvalid
 import voluptuous as vol
 
@@ -48,10 +49,10 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._all_stops: list[Location] = []
         self._stop: Location | None = None
         self._lines: list[Line] = []
-        self._errors: dict[str, str] = {}
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
+        _errors: dict[str, str] = {}
 
         _LOGGER.debug("Start step_user: %s", user_input)
 
@@ -63,14 +64,14 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     self._all_stops = await client.locations_by_name(
                         user_input[CONF_STOP_NAME], filters=[LocationFilter.STOPS]
                     )
-            except EfaConnectionError as err:
-                self._errors["base"] = CONF_ERROR_CONNECTION_FAILED
+            except (EfaConnectionError, ConnectionTimeoutError) as err:
+                _errors[CONF_ERROR_CONNECTION_FAILED] = CONF_ERROR_CONNECTION_FAILED
                 _LOGGER.error('Failed to connect EFA api "%s"', self._url, exc_info=err)
             except EfaResponseInvalid as err:
-                self._errors["base"] = CONF_ERROR_INVALID_RESPONSE
+                _errors[CONF_ERROR_INVALID_RESPONSE] = CONF_ERROR_INVALID_RESPONSE
                 _LOGGER.error("Received invalid response from api", exc_info=err)
 
-            if not self._errors:
+            if not _errors:
                 _LOGGER.debug(
                     "%s stop(s) found for %s",
                     len(self._all_stops),
@@ -78,7 +79,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 )
 
                 if not self._all_stops:
-                    self._errors["base"] = CONF_ERROR_NO_STOP_FOUND
+                    _errors[CONF_ERROR_NO_STOP_FOUND] = CONF_ERROR_NO_STOP_FOUND
                 else:
                     return await self.async_step_stop()
 
@@ -102,11 +103,12 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_STOP_NAME): str,
                 }
             ),
-            errors=self._errors,
+            errors=_errors,
         )
 
     async def async_step_stop(self, user_input=None):
         """Handle step to choose a stop from the available list."""
+        _errors: dict[str, str] = {}
 
         _LOGGER.debug("Start step_stop: %s", user_input)
 
@@ -122,7 +124,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(slugify(self._stop.id))
             self._abort_if_unique_id_configured()
 
-            if not self._errors:
+            if not _errors:
                 return await self.async_step_lines()
 
         options: list[SelectOptionDict] = [
@@ -147,10 +149,12 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     )
                 }
             ),
+            errors=_errors,
         )
 
     async def async_step_lines(self, user_input=None):
         """Handle step to choose needed lines."""
+        _errors: dict[str, str] = {}
 
         if user_input is not None:
             connections: list[Line] = list(
@@ -171,11 +175,12 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._lines = []
 
         async with EfaClient(self._url) as client:
-            self._lines = await client.lines_by_location(self._stop.id)
+            self._lines = await client.lines_by_location(
+                self._stop.id, req_types=[LineRequestType.DEPARTURE_MONITOR]
+            )
 
         _directions: dict = {
-            x.id: f"{transport_to_str(x.product)} {x.name} - {x.destination.name}"
-            for x in self._lines
+            x.id: f"{x.name} - {x.destination.name}" for x in self._lines
         }
 
         return self.async_show_form(
@@ -183,6 +188,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {vol.Required(CONF_LINES): cv.multi_select(_directions)}
             ),
+            errors=_errors,
         )
 
     @staticmethod

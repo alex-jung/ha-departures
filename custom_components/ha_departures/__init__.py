@@ -109,7 +109,7 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator):
         async with EfaClient(self._url) as client:
             try:
                 self._data = await client.departures_by_location(
-                    self._stop_id, date=now_time
+                    self._stop_id, arg_date=now_time, realtime=True
                 )
             except EfaConnectionError as err:
                 _LOGGER.error("Connection to EFA client failed")

@@ -5,9 +5,9 @@
     {
       "user": {
         "title": "Public Transport Departures",
-        "description": "Please select EFA connection and enter stop name:",
+        "description": "Please select API endpoint and enter stop name:",
         "data": {
-          "endpoint": "EFA Endpoint",
+          "endpoint": "Endpoint",
           "stop_name": "Stop name"
         }
       },
@@ -29,7 +29,7 @@
     "error": {
       "no_stop_found": "No locations found",
       "invalid_api_response": "Received invalid response from EFA endpoint",
-      "connection_failed": "Connection to EFA endpoint failed"
+      "connection_failed": "Connection to EFA endpoint failed. Try later again."
     },
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_location%]"

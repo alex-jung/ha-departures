@@ -3,9 +3,9 @@
     "step": {
       "user": {
         "title": "Public Transport Departures",
-        "description": "Bitte EFA Endpoint auswählen und Haltestellenname eingeben:",
+        "description": "Bitte API Endpoint und Haltestellenname eingeben:",
         "data": {
-          "endpoint": "EFA Endpoint",
+          "endpoint": "Endpoint",
           "stop_name": "Haltestellenname"
         }
       },
@@ -27,7 +27,7 @@
     "error": {
       "no_stop_found": "Keine zutreffende Haltestelle gefunden",
       "invalid_api_response": "EFA Endpoint ungültige Antwort",
-      "connection_failed": "Verbindung zu EFA Endpoint fehlgeschlagen"
+      "connection_failed": "Verbindung zu EFA Endpoint fehlgeschlagen. Versuchen Sie später nochmal."
     },
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_location%]"
