@@ -8,6 +8,27 @@
 This integration provides information about next departures for different public transport types like Bus, Subway, Tram etc.
 
 ***
+
+## API Endpoints
+The `Public Transport Departures` integration uses EFA (Elektronische Fahrplanauskunft) endpoints as data source. This endpoints are maintained by different federal states (Bundesländern) and/or municipalities.
+
+### Supported EFA endpoints
+There is a list of known endpoints (will be updated continuously with each release)
+> If more EFA endpoints are known to you, please write me a short messge or create a new issue with URL. After a check I will add them to supported API's.
+
+#### Baden-Württemberg
+| Name | API URL | Supports realtime |
+|--------|------|:---------------------:|
+|Verkehrsverbund Rhein-Neckar (VRN)| https://www.vrn.de/mngvrn/ |:x:|
+|Verkehrs- und Tarifverbund Stuttgart (VVS)|https://www3.vvs.de/mngvvs/|:x:|
+
+#### Bayern
+| Name | API URL | Supports realtime |
+|--------|------|:---------------------:|
+|MoBY (Bahnland Bayern)|https://bahnland-bayern.de/efa/|:white_check_mark:|
+|Regensburger Verkehrsverbund (RVV)|https://efa.rvv.de/efa/|:x:|
+|Verkehrsverbund Großraum Nürnberg (VGN)| https://efa.vgn.de/vgnExt_oeffi/ |:x:|
+
 ## Installation
 
 ### HACS Installation (recommended)
@@ -18,12 +39,12 @@ Until it's finished you can install the integration by adding this repository as
 
 ### Manual Installation
 
-1. Using the tool of choice open the directory (folder) for your HA configuration (where you find `configuration.yaml`).
-1. If you do not have a `custom_components` directory (folder) there, you need to create it.
-1. In the `custom_components` directory (folder) create a new folder called `ha_departures`.
-1. Download all the files from the `custom_components/ha_departures/` directory (folder) in this repository.
-1. Place the files you downloaded in the new directory (folder) you created.
-1. Restart Home Assistant
+1. Using the tool of choice open the folder for your HA configuration (where you find `configuration.yaml`).
+2. If you do not have a `custom_components` folder there, you need to create it.
+3. In the `custom_components` folder create a new folder called `ha_departures`.
+4. Download all the files from the `custom_components/ha_departures/` folder in this repository.
+5. Place the files you downloaded in the new folder you created in `step 3`.
+6. Restart Home Assistant
 
 ## Configuration
 
@@ -35,11 +56,10 @@ The configuration of integration is made via Home Assistant GUI
 4. Click on integration to start [configuration dialog](#Configure-a-new-station)
 
 ### Configure a new station
-#### Step 1 - Choose the API endpoint providing departures information and enter stop name 
-> Currently is only `Verkehrsverbund Großraum Nürnberg` is supported. If you know an endpoint for you region, let me know. I will add the endpoint to the list.
+
+#### Step 1 - Choose the [API endpoint](#supported-efa-endpoints) and enter stop name  
 
 ![image](https://github.com/user-attachments/assets/6341bb9c-58b1-4d94-bfc5-277dea779d37)
-
 
 #### Step 2 - Choose stop
 > In this step `ha-departures` integration will search for all locations matching provided stop name.
@@ -53,7 +73,7 @@ The configuration of integration is made via Home Assistant GUI
 
 ![image](https://github.com/user-attachments/assets/2e51a94b-ef8a-4422-8e3b-dec921a1a366)
 
-As result a new `Hub` is created incl. new sensor(s) for each direction you selected in previous step:
+As result a new `Hub` has been created incl. new sensor(s) for each connection you selected in previous step:
 ![image](https://github.com/user-attachments/assets/e3d4de2c-adda-4414-8f8a-d8c52e0bdd38)
 
 ![image](https://github.com/user-attachments/assets/7a54e888-df7f-4098-a644-f93279f043d7)
@@ -73,10 +93,10 @@ sensor:
   - platform: template
     sensors:
       furth_197:
-        friendly_name: 'Fürth Hauptbahnhof - Bus 179 - Fürth Süd(only time)'
+        friendly_name: 'Fürth Hauptbahnhof - Bus 179 - Fürth Süd(time only)'
         value_template: "{{ (as_datetime(states('sensor.furth_hauptbahnhof_bus_179_furth_sud'))).strftime('%H:%m') }}"
 ```
-Add entity (or entites) card to your Dashboars(don't forget to reload yaml before)\
+Add entity (or entites) card to your Dashboars(don't forget to reload yaml before)
 ```yaml
 type: entities
 entities:
@@ -87,8 +107,8 @@ entities:
 ![image](https://github.com/user-attachments/assets/d813c9e4-0d5f-498e-81de-6abc88430c8c)
 
 ### Option 2 (with time-bar-card)
-To get more fancy stuff, you can use e.g. [time-bar-card](https://github.com/rianadon/timer-bar-card) to visualize remaining time to next departure:
-yaml conifuguration:
+You can use other cards like [time-bar-card](https://github.com/rianadon/timer-bar-card) to visualize remaining time to the next departure.
+card yaml configuration:
 ```yaml
 type: custom:timer-bar-card
 name: Abfahrten Fürth-Hbf

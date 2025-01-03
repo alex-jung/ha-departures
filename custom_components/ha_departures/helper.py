@@ -6,15 +6,17 @@ from apyefa import Line, TransportType
 def transport_to_str(t_type: TransportType):
     """Return human readable german translation of transport type."""
     match t_type:
-        case TransportType.BUS:
+        case TransportType.CITY_BUS:
             return "Bus"
+        case TransportType.REGIONAL_BUS:
+            return "Reginal Bus"
+        case TransportType.EXPRESS_BUS:
+            return "Express Bus"
         case TransportType.SUBWAY:
             return "U-Bahn"
         case TransportType.TRAM:
             return "Tram"
-        case TransportType.RBUS:
-            return "Regional Bus"
-        case TransportType.RAIL:
+        case TransportType.TRAIN:
             return "Zug"
         case TransportType.SUBURBAN:
             return "S-Bahn"

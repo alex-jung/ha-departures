@@ -1,6 +1,5 @@
 """Sensor platform for Public Transport Departures."""
 
-from datetime import datetime, timedelta
 import logging
 
 from apyefa import Departure, Line, TransportType
@@ -9,7 +8,13 @@ from homeassistant import config_entries, core
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ATTR_DIRECTION, ATTR_LINE_ID, ATTR_LINE_NAME, ATTR_TRANSPORT_TYPE
+from .const import (
+    ATTR_DIRECTION,
+    ATTR_LINE_ID,
+    ATTR_LINE_NAME,
+    ATTR_PLANNED_DEPARTURE_TIME,
+    ATTR_TRANSPORT_TYPE,
+)
 from .helper import create_unique_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,9 +51,8 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         self._transport = line.product
         self._line = line.name
         self._destination = line.destination
-        self._planned_departure_time: datetime | None = None
-        self._delay: timedelta | None = None
-        self._occupancy_level: str | None = None
+        # self._delay: timedelta | None = None
+        # self._occupancy_level: str | None = None
         self._value = None
 
         self._attr_name = (
@@ -62,7 +66,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             ATTR_DIRECTION: line.destination.name,
             ATTR_LINE_ID: line.id,
             # ATTR_OCCUPANCY_LEVEL: self._occupancy_level,
-            # ATTR_PLANNED_DEPARTURE_TIME: self._planned_departure_time,
+            ATTR_PLANNED_DEPARTURE_TIME: None,
         }
 
         _LOGGER.debug('ha-departures sensor "%s" created', self.unique_id)
@@ -76,7 +80,11 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
     def icon(self) -> str:
         """Icon of the entity, based on transport type."""
         match self._transport:
-            case TransportType.BUS | TransportType.RBUS | TransportType.EXPRESS_BUS:
+            case (
+                TransportType.CITY_BUS
+                | TransportType.REGIONAL_BUS
+                | TransportType.EXPRESS_BUS
+            ):
                 return "mdi:bus"
             case TransportType.TRAM:
                 return "mdi:tram"
@@ -84,7 +92,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
                 return "mdi:subway"
             case TransportType.AST:
                 return "mdi:taxi"
-            case TransportType.SUBURBAN | TransportType.RAIL | TransportType.CITY_RAIL:
+            case TransportType.SUBURBAN | TransportType.TRAIN | TransportType.CITY_RAIL:
                 return "mdi:train"
             case _:
                 return "mdi:train-bus"
@@ -105,6 +113,20 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             _LOGGER.debug("No departures found for %s", self.unique_id)
             return
 
-        self._value = departures[0].estimated_time or departures[0].planned_time
+        self._value = departures[0].planned_time
+
+        estimated_time = departures[0].estimated_time
+        planned_time = departures[0].planned_time
+
+        if estimated_time:
+            self._value = estimated_time
+        else:
+            self._value = planned_time
+
+        self._attr_extra_state_attributes.update(
+            {
+                ATTR_PLANNED_DEPARTURE_TIME: planned_time,
+            }
+        )
 
         self.async_write_ha_state()
