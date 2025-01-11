@@ -1,19 +1,17 @@
 """Constants for Public Transport Departures."""
 
-# Base component constants
 from typing import Final
 
 NAME = "Public Transport Departures"
 DOMAIN = "ha_departures"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 
 ISSUE_URL = "https://github.com/alex-jung/ha-departures/issues"
 
 # Platforms
 SENSOR = "sensor"
 PLATFORMS = [SENSOR]
-
 
 # Configuration and options
 CONF_STOP_NAME = "stop_name"
@@ -42,11 +40,21 @@ ATTR_ESTIMATED_DEPARTURE_TIME: Final = "estimated_departure_time"
 
 # Endpoints
 EFA_ENDPOINTS: Final = {
+    # Baden-Württemberg
+    "Verkehrsverbund Rhein-Neckar (VRN)": "https://www.vrn.de/mngvrn/",
+    "Verkehrs- und Tarifverbund Stuttgart (VVS)": "https://www3.vvs.de/mngvvs/",
+    # Bayern
     "MoBY (Bahnland Bayern)": "https://bahnland-bayern.de/efa/",
     "Regensburger Verkehrsverbund (RVV)": "https://efa.rvv.de/efa/",
     "Verkehrsverbund Großraum Nürnberg (VGN)": "https://efa.vgn.de/vgnExt_oeffi/",
-    "Verkehrsverbund Rhein-Neckar (VRN)": "https://www.vrn.de/mngvrn/",
-    "Verkehrs- und Tarifverbund Stuttgart (VVS)": "https://www3.vvs.de/mngvvs/",
+    # Mecklenburg-Vorpommern
+    "Verkehrsgesellschaft Mecklenburg-Vorpommern mbH (VMV)": "https://fahrplanauskunft-mv.de/vmv-efa/",
+    # Nordrhein-Westfalen
+    "Der WestfalenTarif": "https://www.westfalenfahrplan.de/nwl-efa/",
+    # Rheinland-Pfalz
+    "Rolph.de": "https://mandanten.vrn.de/takt2/",
+    # Sachsen
+    "Verkehrsverbund Mittelsachsen GmbH (VMS)": "https://efa.vvo-online.de/VMSSL3/",
 }
 
 
