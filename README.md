@@ -16,64 +16,59 @@ The `Public Transport Departures` integration uses EFA (Elektronische Fahrplanau
 
 ### Supported EFA endpoints
 There is a list of known endpoints (will be updated continuously with each release)
+
 > [!IMPORTANT]
-> If more EFA endpoints are known to you, please write me a short messge or create a new issue with URL. After a check I will add them to supported API's.
+> If more EFA endpoints are known to you, please write me a short messge or create a new issue and provide API URL. After a check I will add them to supported API's.
 
 <table>
     <tr>
       <th>Name</th>
-      <th>API Url</th>
       <th>Supports real time</th>
     </tr>
-  <tr><td colspan="3" align="center"><b>Baden-Württemberg</b></td></tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Baden-Württemberg</b></td></tr>
   <tr>
-    <td>Verkehrsverbund Rhein-Neckar (VRN)</td>
-    <td>https://www.vrn.de/mngvrn/</td>
-    <td align="center">❌</td>
+    <td><a href="https://www.vrn.de/mngvrn/">Verkehrsverbund Rhein-Neckar (VRN)</a></td>
+    <td align="center">To check</td>
   </tr>
   <tr>
-    <td>Verkehrs- und Tarifverbund Stuttgart (VVS)</td>
-    <td>https://www3.vvs.de/mngvvs/</td>
-    <td align="center">❌</td>
+    <td><a href="https://www3.vvs.de/mngvvs/">Verkehrs- und Tarifverbund Stuttgart (VVS)</a></td>
+    <td align="center">To check</td>
   </tr>
-  <tr><td colspan="3" align="center"><b>Bayern</b></td></tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Bayern</b></td></tr>
   <tr>
-    <td>MoBY (Bahnland Bayern)</td>
-    <td>https://bahnland-bayern.de/efa/</td>
-    <td align="center">✅</td>
+    <td><a href="https://bahnland-bayern.de/efa/">MoBY (Bahnland Bayern)</a></td>
+    <td align="center">Yes</td>
   </tr>
   <tr>
-    <td>Regensburger Verkehrsverbund (RVV)</td>
-    <td>https://efa.rvv.de/efa/</td>
-    <td align="center">❌</td>
+    <td><a href="https://efa.rvv.de/efa/">Regensburger Verkehrsverbund (RVV)</a></td>
+    <td align="center">No</td>
   </tr>
   <tr>
-    <td>Verkehrsverbund Großraum Nürnberg (VGN)</td>
-    <td>https://efa.vgn.de/vgnExt_oeffi/</td>
-    <td align="center">❌</td>
+    <td><a href="https://efa.vgn.de/vgnExt_oeffi/">Verkehrsverbund Großraum Nürnberg (VGN)</a></td>
+    <td align="center">No</td>
+  </tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Mecklenburg-Vorpommern</b></td></tr>
+  <tr>
+    <td><a href="https://fahrplanauskunft-mv.de/vmv-efa/">Verkehrsgesellschaft Mecklenburg-Vorpommern mbH (VMV)</a></td>
+    <td align="center">To check</td>
+  </tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Nordrhein-Westfalen</b></td></tr>
+  <tr>
+    <td><a href="https://www.westfalenfahrplan.de/nwl-efa/">Der WestfalenTarif</a></td>
+    <td align="center">To check</td>
+  </tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Rheinland-Pfalz</b></td></tr>
+  <tr>
+    <td><a href="https://mandanten.vrn.de/takt2/">Rolph.de</a></td>
+    <td align="center">To check</td>
+  </tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Sachsen</b></td></tr>
+  <tr>
+    <td><a href="https://efa.vvo-online.de/VMSSL3/">Verkehrsverbund Mittelsachsen GmbH (VMS)</a></td>
+    <td align="center">To check</td>
   </tr>
 </table>
 
-
-#### Mecklenburg-Vorpommern
-| Name | API URL | Supports realtime |
-|--------|------|:---------------------:|
-|Verkehrsgesellschaft Mecklenburg-Vorpommern mbH (VMV)|https://fahrplanauskunft-mv.de/vmv-efa/|TBD|
-
-#### Nordrhein-Westfalen
-| Name | API URL | Supports realtime |
-|--------|------|:---------------------:|
-|Der WestfalenTarif|https://www.westfalenfahrplan.de/nwl-efa|TBD|
-
-#### Rheinland-Pfalz
-| Name | API URL | Supports realtime |
-|--------|------|:---------------------:|
-|Rolph.de|https://mandanten.vrn.de/takt2/|TBD|
-
-#### Sachsen
-| Name | API URL | Supports realtime |
-|--------|------|:---------------------:|
-|Verkehrsverbund Mittelsachsen GmbH (VMS)|https://efa.vvo-online.de/VMSSL3/|TBD|
 
 ## Installation
 
@@ -120,12 +115,14 @@ The configuration of integration is made via Home Assistant GUI
 ![image](https://github.com/user-attachments/assets/2e51a94b-ef8a-4422-8e3b-dec921a1a366)
 
 As result a new `Hub` has been created incl. new sensor(s) for each connection you selected in previous step:
+
 ![image](https://github.com/user-attachments/assets/e3d4de2c-adda-4414-8f8a-d8c52e0bdd38)
 
 ![image](https://github.com/user-attachments/assets/7a54e888-df7f-4098-a644-f93279f043d7)
 
 ### Reconfigure an entry
 You can any time add or remove connections to existing `hub's` (stop locations)
+
 ![image](https://github.com/user-attachments/assets/425685e2-743d-45ea-90da-7ef2b31b177e)
 
 Just click on `configure` button, select or deselct the connections and click on `OK`, Integration will remove obsolete and add new connections to the Home Assistant.
