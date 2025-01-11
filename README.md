@@ -3,7 +3,9 @@
 ![GitHub Release](https://img.shields.io/github/v/release/alex-jung/ha-departures)
 ![GitHub License](https://img.shields.io/github/license/alex-jung/ha-departures)
 
-![Big_512](https://github.com/user-attachments/assets/67e3ba87-94ea-4d27-b891-f6cbab779830)
+<p align="center">
+  <img width="300" src="https://github.com/user-attachments/assets/67e3ba87-94ea-4d27-b891-f6cbab779830"/>
+</p>
 
 This integration provides information about next departures for different public transport types like Bus, Subway, Tram etc.
 
@@ -14,20 +16,59 @@ The `Public Transport Departures` integration uses EFA (Elektronische Fahrplanau
 
 ### Supported EFA endpoints
 There is a list of known endpoints (will be updated continuously with each release)
-> If more EFA endpoints are known to you, please write me a short messge or create a new issue with URL. After a check I will add them to supported API's.
 
-#### Baden-Württemberg
-| Name | API URL | Supports realtime |
-|--------|------|:---------------------:|
-|Verkehrsverbund Rhein-Neckar (VRN)| https://www.vrn.de/mngvrn/ |:x:|
-|Verkehrs- und Tarifverbund Stuttgart (VVS)|https://www3.vvs.de/mngvvs/|:x:|
+> [!IMPORTANT]
+> If more EFA endpoints are known to you, please write me a short messge or create a new issue and provide API URL. After a check I will add them to supported API's.
 
-#### Bayern
-| Name | API URL | Supports realtime |
-|--------|------|:---------------------:|
-|MoBY (Bahnland Bayern)|https://bahnland-bayern.de/efa/|:white_check_mark:|
-|Regensburger Verkehrsverbund (RVV)|https://efa.rvv.de/efa/|:x:|
-|Verkehrsverbund Großraum Nürnberg (VGN)| https://efa.vgn.de/vgnExt_oeffi/ |:x:|
+<table>
+    <tr>
+      <th>Name</th>
+      <th>Supports real time</th>
+    </tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Baden-Württemberg</b></td></tr>
+  <tr>
+    <td><a href="https://www.vrn.de/mngvrn/">Verkehrsverbund Rhein-Neckar (VRN)</a></td>
+    <td align="center">To check</td>
+  </tr>
+  <tr>
+    <td><a href="https://www3.vvs.de/mngvvs/">Verkehrs- und Tarifverbund Stuttgart (VVS)</a></td>
+    <td align="center">To check</td>
+  </tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Bayern</b></td></tr>
+  <tr>
+    <td><a href="https://bahnland-bayern.de/efa/">MoBY (Bahnland Bayern)</a></td>
+    <td align="center">Yes</td>
+  </tr>
+  <tr>
+    <td><a href="https://efa.rvv.de/efa/">Regensburger Verkehrsverbund (RVV)</a></td>
+    <td align="center">No</td>
+  </tr>
+  <tr>
+    <td><a href="https://efa.vgn.de/vgnExt_oeffi/">Verkehrsverbund Großraum Nürnberg (VGN)</a></td>
+    <td align="center">No</td>
+  </tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Mecklenburg-Vorpommern</b></td></tr>
+  <tr>
+    <td><a href="https://fahrplanauskunft-mv.de/vmv-efa/">Verkehrsgesellschaft Mecklenburg-Vorpommern mbH (VMV)</a></td>
+    <td align="center">To check</td>
+  </tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Nordrhein-Westfalen</b></td></tr>
+  <tr>
+    <td><a href="https://www.westfalenfahrplan.de/nwl-efa/">Der WestfalenTarif</a></td>
+    <td align="center">To check</td>
+  </tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Rheinland-Pfalz</b></td></tr>
+  <tr>
+    <td><a href="https://mandanten.vrn.de/takt2/">Rolph.de</a></td>
+    <td align="center">To check</td>
+  </tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Sachsen</b></td></tr>
+  <tr>
+    <td><a href="https://efa.vvo-online.de/VMSSL3/">Verkehrsverbund Mittelsachsen GmbH (VMS)</a></td>
+    <td align="center">To check</td>
+  </tr>
+</table>
+
 
 ## Installation
 
@@ -74,12 +115,14 @@ The configuration of integration is made via Home Assistant GUI
 ![image](https://github.com/user-attachments/assets/2e51a94b-ef8a-4422-8e3b-dec921a1a366)
 
 As result a new `Hub` has been created incl. new sensor(s) for each connection you selected in previous step:
+
 ![image](https://github.com/user-attachments/assets/e3d4de2c-adda-4414-8f8a-d8c52e0bdd38)
 
 ![image](https://github.com/user-attachments/assets/7a54e888-df7f-4098-a644-f93279f043d7)
 
 ### Reconfigure an entry
 You can any time add or remove connections to existing `hub's` (stop locations)
+
 ![image](https://github.com/user-attachments/assets/425685e2-743d-45ea-90da-7ef2b31b177e)
 
 Just click on `configure` button, select or deselct the connections and click on `OK`, Integration will remove obsolete and add new connections to the Home Assistant.
@@ -131,4 +174,7 @@ Result looks like there:\
 ![ezgif-3-136a167cd5](https://github.com/user-attachments/assets/3b8b8a09-1067-4d90-924a-729616c6e765)
 
 ### Option 3 (ha-departures-card)
-> Development is ongoing
+
+![Screenshot](assets/departures-card.png)
+
+Documentation of this card please s. [repository](https://github.com/alex-jung/ha-departures-card)
