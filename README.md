@@ -174,4 +174,7 @@ Result looks like there:\
 ![ezgif-3-136a167cd5](https://github.com/user-attachments/assets/3b8b8a09-1067-4d90-924a-729616c6e765)
 
 ### Option 3 (ha-departures-card)
-> Development is ongoing
+
+![Screenshot](assets/departures-card.png)
+
+Documentation of this card please s. [repository](https://github.com/alex-jung/ha-departures-card)
