@@ -25,7 +25,7 @@ from .const import (
     ATTR_PLANNED_DEPARTURE_TIME_4,
     ATTR_TRANSPORT_TYPE,
 )
-from .helper import InstableDepartureTime, create_unique_id
+from .helper import UnstableDepartureTime, create_unique_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,19 +63,19 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         self._destination = line.destination
         self._value = None
         self._times = [
-            InstableDepartureTime(
+            UnstableDepartureTime(
                 ATTR_PLANNED_DEPARTURE_TIME, ATTR_ESTIMATED_DEPARTURE_TIME
             ),
-            InstableDepartureTime(
+            UnstableDepartureTime(
                 ATTR_PLANNED_DEPARTURE_TIME_1, ATTR_ESTIMATED_DEPARTURE_TIME_1
             ),
-            InstableDepartureTime(
+            UnstableDepartureTime(
                 ATTR_PLANNED_DEPARTURE_TIME_2, ATTR_ESTIMATED_DEPARTURE_TIME_2
             ),
-            InstableDepartureTime(
+            UnstableDepartureTime(
                 ATTR_PLANNED_DEPARTURE_TIME_3, ATTR_ESTIMATED_DEPARTURE_TIME_3
             ),
-            InstableDepartureTime(
+            UnstableDepartureTime(
                 ATTR_PLANNED_DEPARTURE_TIME_4, ATTR_ESTIMATED_DEPARTURE_TIME_4
             ),
         ]

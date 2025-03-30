@@ -35,7 +35,7 @@ def create_unique_id(line: Line | dict[str, str]) -> str | None:
     raise ValueError(f"Expected dict or Line object, got {type(line)}")
 
 
-class InstableDepartureTime:
+class UnstableDepartureTime:
     """
     A helper class to manage and track unstable departure times, handling planned and estimated
     departure times with a mechanism to reset values after a certain number of consecutive `None` values.
