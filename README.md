@@ -52,6 +52,11 @@ There is a list of known endpoints (will be updated continuously with each relea
     <td><a href="https://fahrplanauskunft-mv.de/vmv-efa/">Verkehrsgesellschaft Mecklenburg-Vorpommern mbH (VMV)</a></td>
     <td align="center">To check</td>
   </tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Niedersachsen</b></td></tr>
+  <tr>
+    <td><a href="https://bsvg.efa.de/vrbstd_relaunch/">Vehrkehrsverbund Region Braunschweig (VRB)</a></td>
+    <td align="center">To check</td>
+  </tr>
   <tr><td colspan="2" style="background:#5D8736" align="center"><b>Nordrhein-Westfalen</b></td></tr>
   <tr>
     <td><a href="https://www.westfalenfahrplan.de/nwl-efa/">Der WestfalenTarif</a></td>
