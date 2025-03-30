@@ -5,7 +5,7 @@ from typing import Final
 NAME = "Public Transport Departures"
 DOMAIN = "ha_departures"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "1.0.1"
+VERSION = "1.1.0"
 
 ISSUE_URL = "https://github.com/alex-jung/ha-departures/issues"
 
@@ -32,10 +32,16 @@ ATTR_TRANSPORT_TYPE: Final = "transport"
 ATTR_DIRECTION: Final = "direction"
 ATTR_DIRECTION_TEXT: Final = "direction_text"
 ATTR_DEPARTURES: Final = "departures"
-ATTR_DELAY: Final = "delay"
-ATTR_OCCUPANCY_LEVEL: Final = "occupancy_level"
 ATTR_PLANNED_DEPARTURE_TIME: Final = "planned_departure_time"
+ATTR_PLANNED_DEPARTURE_TIME_1: Final = "planned_departure_time_1"
+ATTR_PLANNED_DEPARTURE_TIME_2: Final = "planned_departure_time_2"
+ATTR_PLANNED_DEPARTURE_TIME_3: Final = "planned_departure_time_3"
+ATTR_PLANNED_DEPARTURE_TIME_4: Final = "planned_departure_time_4"
 ATTR_ESTIMATED_DEPARTURE_TIME: Final = "estimated_departure_time"
+ATTR_ESTIMATED_DEPARTURE_TIME_1: Final = "estimated_departure_time_1"
+ATTR_ESTIMATED_DEPARTURE_TIME_2: Final = "estimated_departure_time_2"
+ATTR_ESTIMATED_DEPARTURE_TIME_3: Final = "estimated_departure_time_3"
+ATTR_ESTIMATED_DEPARTURE_TIME_4: Final = "estimated_departure_time_4"
 
 
 # Endpoints
@@ -55,6 +61,8 @@ EFA_ENDPOINTS: Final = {
     "Rolph.de": "https://mandanten.vrn.de/takt2/",
     # Sachsen
     "Verkehrsverbund Mittelsachsen GmbH (VMS)": "https://efa.vvo-online.de/VMSSL3/",
+    # Niedersachsen
+    "Vehrkehrsverbund Region Braunschweig (VRB)": "https://bsvg.efa.de/vrbstd_relaunch/",
 }
 
 
