@@ -1,5 +1,6 @@
 """Sensor platform for Public Transport Departures."""
 
+from datetime import datetime
 import logging
 
 from apyefa import Departure, Line, TransportType
@@ -10,12 +11,21 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     ATTR_DIRECTION,
+    ATTR_ESTIMATED_DEPARTURE_TIME,
+    ATTR_ESTIMATED_DEPARTURE_TIME_1,
+    ATTR_ESTIMATED_DEPARTURE_TIME_2,
+    ATTR_ESTIMATED_DEPARTURE_TIME_3,
+    ATTR_ESTIMATED_DEPARTURE_TIME_4,
     ATTR_LINE_ID,
     ATTR_LINE_NAME,
     ATTR_PLANNED_DEPARTURE_TIME,
+    ATTR_PLANNED_DEPARTURE_TIME_1,
+    ATTR_PLANNED_DEPARTURE_TIME_2,
+    ATTR_PLANNED_DEPARTURE_TIME_3,
+    ATTR_PLANNED_DEPARTURE_TIME_4,
     ATTR_TRANSPORT_TYPE,
 )
-from .helper import create_unique_id
+from .helper import InstableDepartureTime, create_unique_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,9 +61,24 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         self._transport = line.product
         self._line = line.name
         self._destination = line.destination
-        # self._delay: timedelta | None = None
-        # self._occupancy_level: str | None = None
         self._value = None
+        self._times = [
+            InstableDepartureTime(
+                ATTR_PLANNED_DEPARTURE_TIME, ATTR_ESTIMATED_DEPARTURE_TIME
+            ),
+            InstableDepartureTime(
+                ATTR_PLANNED_DEPARTURE_TIME_1, ATTR_ESTIMATED_DEPARTURE_TIME_1
+            ),
+            InstableDepartureTime(
+                ATTR_PLANNED_DEPARTURE_TIME_2, ATTR_ESTIMATED_DEPARTURE_TIME_2
+            ),
+            InstableDepartureTime(
+                ATTR_PLANNED_DEPARTURE_TIME_3, ATTR_ESTIMATED_DEPARTURE_TIME_3
+            ),
+            InstableDepartureTime(
+                ATTR_PLANNED_DEPARTURE_TIME_4, ATTR_ESTIMATED_DEPARTURE_TIME_4
+            ),
+        ]
 
         self._attr_name = (
             f"{coordinator.stop_name} - {self._line} - {self._destination.name}"
@@ -65,7 +90,6 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             ATTR_TRANSPORT_TYPE: self._transport.name,
             ATTR_DIRECTION: line.destination.name,
             ATTR_LINE_ID: line.id,
-            # ATTR_OCCUPANCY_LEVEL: self._occupancy_level,
             ATTR_PLANNED_DEPARTURE_TIME: None,
         }
 
@@ -113,20 +137,31 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             _LOGGER.debug("No departures found for %s", self.unique_id)
             return
 
-        self._value = departures[0].planned_time
+        _LOGGER.debug(
+            "Sensor '%s' received %s departure(s)", self.unique_id, len(departures)
+        )
 
-        estimated_time = departures[0].estimated_time
-        planned_time = departures[0].planned_time
+        self._update_times(departures)
 
-        if estimated_time:
-            self._value = estimated_time
-        else:
-            self._value = planned_time
-
-        self._attr_extra_state_attributes.update(
-            {
-                ATTR_PLANNED_DEPARTURE_TIME: planned_time,
-            }
+        self._value = (
+            departures[0].estimated_time
+            if departures[0].estimated_time
+            else departures[0].planned_time
         )
 
         self.async_write_ha_state()
+
+    def _update_times(self, departures: list[Departure]):
+        for i in range(5):
+            self._times[i].update(departures[i] if i < len(departures) else None)
+            self._attr_extra_state_attributes.update(self._times[i].to_dict())
+
+    def _calculate_datetime(self, departure: Departure) -> datetime | None:
+        if not departure or not isinstance(departure, Departure):
+            return None
+
+        return (
+            departure.estimated_time
+            if departure.estimated_time
+            else departure.planned_time
+        )

@@ -96,7 +96,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         SelectSelectorConfig(
                             options=endpoints,
                             multiple=False,
-                            sort=True,
+                            sort=False,
                             mode=SelectSelectorMode.DROPDOWN,
                         )
                     ),
