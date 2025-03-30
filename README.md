@@ -134,7 +134,13 @@ Just click on `configure` button, select or deselct the connections and click on
 
 ## Usage in dashboard
 
-### Option 1 (show departure time)
+### Option 1 (ha-departures-card)
+
+![Screenshot](assets/departures-card.png)
+
+Documentation of this card please s. [repository](https://github.com/alex-jung/ha-departures-card)
+
+### Option 2 (show departure time)
 Add a custom template sensor in your _configuration.yaml_
 ```yaml
 sensor:
@@ -154,7 +160,7 @@ entities:
 ```
 ![image](https://github.com/user-attachments/assets/d813c9e4-0d5f-498e-81de-6abc88430c8c)
 
-### Option 2 (with time-bar-card)
+### Option 3 (with time-bar-card)
 You can use other cards like [time-bar-card](https://github.com/rianadon/timer-bar-card) to visualize remaining time to the next departure.
 card yaml configuration:
 ```yaml
@@ -177,9 +183,3 @@ entities:
 ```
 Result looks like there:\
 ![ezgif-3-136a167cd5](https://github.com/user-attachments/assets/3b8b8a09-1067-4d90-924a-729616c6e765)
-
-### Option 3 (ha-departures-card)
-
-![Screenshot](assets/departures-card.png)
-
-Documentation of this card please s. [repository](https://github.com/alex-jung/ha-departures-card)
