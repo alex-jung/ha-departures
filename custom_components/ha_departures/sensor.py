@@ -135,6 +135,8 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
         if not departures:
             _LOGGER.debug("No departures found for %s", self.unique_id)
+            self.clear_times()
+
             return
 
         _LOGGER.debug(
@@ -151,8 +153,48 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
         self.async_write_ha_state()
 
-    def _update_times(self, departures: list[Departure]):
+    def clear_times(self):
+        """Clear all times."""
         for i in range(5):
+            self._times[i].clear()
+
+        self._value = None
+
+        self._attr_extra_state_attributes.update(
+            {
+                ATTR_PLANNED_DEPARTURE_TIME: None,
+                ATTR_ESTIMATED_DEPARTURE_TIME: None,
+                ATTR_PLANNED_DEPARTURE_TIME_1: None,
+                ATTR_ESTIMATED_DEPARTURE_TIME_1: None,
+                ATTR_PLANNED_DEPARTURE_TIME_2: None,
+                ATTR_ESTIMATED_DEPARTURE_TIME_2: None,
+                ATTR_PLANNED_DEPARTURE_TIME_3: None,
+                ATTR_ESTIMATED_DEPARTURE_TIME_3: None,
+                ATTR_PLANNED_DEPARTURE_TIME_4: None,
+                ATTR_ESTIMATED_DEPARTURE_TIME_4: None,
+            }
+        )
+
+    def _update_times(self, departures: list[Departure]):
+        _LOGGER.debug(
+            "Updating times for %s-%s:",
+            self._line,
+            self.extra_state_attributes[ATTR_DIRECTION],
+        )
+
+        for i in range(5):
+            planned_time = departures[i].planned_time if i < len(departures) else None
+            estimated_time = (
+                departures[i].estimated_time if i < len(departures) else None
+            )
+
+            _LOGGER.debug(
+                "Departure %s: %s -> %s",
+                i,
+                planned_time,
+                estimated_time,
+            )
+
             self._times[i].update(departures[i] if i < len(departures) else None)
             self._attr_extra_state_attributes.update(self._times[i].to_dict())
 
