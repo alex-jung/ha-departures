@@ -22,6 +22,13 @@
         "data": {
           "lines": "Verbindungen"
         }
+      },
+      "hubname": {
+        "title": "Public Transport Departures",
+        "description": "Bitte einen Namen für die Konfiguration eingeben:",
+        "data": {
+          "hub_name": "Name der Konfiguration"
+        }
       }
     },
     "error": {
@@ -30,7 +37,7 @@
       "connection_failed": "Verbindung zu EFA Endpoint fehlgeschlagen. Versuchen Sie später nochmal."
     },
     "abort": {
-      "already_configured": "[%key:common::config_flow::abort::already_configured_location%]"
+      "already_configured": "Diese Konfiguration ist bereits eingerichtet."
     }
   },
   "options": {

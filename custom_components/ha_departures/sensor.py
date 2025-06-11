@@ -9,6 +9,7 @@ from homeassistant import config_entries, core
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import DeparturesDataUpdateCoordinator
 from .const import (
     ATTR_DIRECTION,
     ATTR_ESTIMATED_DEPARTURE_TIME,
@@ -37,10 +38,7 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
 
     async_add_entities(
-        [
-            DeparturesSensor(hass, coordinator, entry_data)
-            for entry_data in coordinator.lines
-        ],
+        [DeparturesSensor(hass, coordinator, line) for line in coordinator.lines],
         update_before_add=True,
     )
 
@@ -51,7 +49,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
     def __init__(
         self,
         hass: core.HomeAssistant,
-        coordinator,
+        coordinator: DeparturesDataUpdateCoordinator,
         line: Line,
     ) -> None:
         """Initialize the sensor."""
@@ -83,7 +81,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = (
             f"{coordinator.stop_name} - {self._line} - {self._destination.name}"
         )
-        self._attr_unique_id = create_unique_id(line)
+        self._attr_unique_id = create_unique_id(line, coordinator.hub_name)
 
         self._attr_extra_state_attributes = {
             ATTR_LINE_NAME: self._line,
@@ -145,11 +143,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
         self._update_times(departures)
 
-        self._value = (
-            departures[0].estimated_time
-            if departures[0].estimated_time
-            else departures[0].planned_time
-        )
+        self._value = self._calculate_datetime(departures[0])
 
         self.async_write_ha_state()
 

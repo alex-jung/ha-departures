@@ -32,7 +32,7 @@
       "connection_failed": "Connection to EFA endpoint failed. Try later again."
     },
     "abort": {
-      "already_configured": "[%key:common::config_flow::abort::already_configured_location%]"
+      "already_configured": "This stop is already configured"
     }
   },
   "options": {

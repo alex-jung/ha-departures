@@ -18,7 +18,6 @@ from homeassistant.helpers.selector import (
     SelectSelectorConfig,
     SelectSelectorMode,
 )
-from homeassistant.util import slugify
 
 from .const import (
     CONF_API_URL,
@@ -27,13 +26,14 @@ from .const import (
     CONF_ERROR_INVALID_RESPONSE,
     CONF_ERROR_NO_CHANGES_OPTIONS,
     CONF_ERROR_NO_STOP_FOUND,
+    CONF_HUB_NAME,
     CONF_LINES,
     CONF_STOP_ID,
     CONF_STOP_NAME,
     DOMAIN,
     EFA_ENDPOINTS,
 )
-from .helper import create_unique_id, transport_to_str
+from .helper import create_unique_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,6 +42,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for ha_departures."""
 
     VERSION = 1
+    MINOR_VERSION = 2
 
     def __init__(self) -> None:
         """Initialize."""
@@ -49,6 +50,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._all_stops: list[Location] = []
         self._stop: Location | None = None
         self._lines: list[Line] = []
+        self._data: dict[str, str] = {}
 
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
@@ -121,9 +123,6 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.error("No stop found")
                 return self.async_abort(reason="No stop found")
 
-            await self.async_set_unique_id(slugify(self._stop.id))
-            self._abort_if_unique_id_configured()
-
             if not _errors:
                 return await self.async_step_lines()
 
@@ -157,19 +156,23 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         _errors: dict[str, str] = {}
 
         if user_input is not None:
-            connections: list[Line] = list(
-                filter(lambda x: x.id in user_input[CONF_LINES], self._lines)
-            )
+            # remove all duplicate lines
+            connections: list[Line] = []
+            available_lines = set()
 
-            return self.async_create_entry(
-                title=self._stop.name,
-                data={
-                    CONF_API_URL: self._url,
-                    CONF_STOP_ID: self._stop.id,
-                    CONF_STOP_NAME: self._stop.name,
-                    CONF_LINES: [x.to_dict() for x in connections],
-                },
-            )
+            for line in self._lines:
+                if line.id in user_input[CONF_LINES] and line.id not in available_lines:
+                    available_lines.add(line.id)
+                    connections.append(line)
+
+            self._data = {
+                CONF_API_URL: self._url,
+                CONF_STOP_ID: self._stop.id,
+                CONF_STOP_NAME: self._stop.name,
+                CONF_LINES: [x.to_dict() for x in connections],
+            }
+
+            return await self.async_step_hubname()
 
         # load all lines for choosen stop location
         self._lines = []
@@ -189,6 +192,28 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 {vol.Required(CONF_LINES): cv.multi_select(_directions)}
             ),
             errors=_errors,
+        )
+
+    async def async_step_hubname(self, user_input=None):
+        """Handle step to define a hub name."""
+        if user_input is not None:
+            await self.async_set_unique_id(
+                user_input.get(CONF_HUB_NAME, self._stop.name)
+            )
+            self._abort_if_unique_id_configured()
+
+            self._data.update({CONF_HUB_NAME: user_input[CONF_HUB_NAME]})
+
+            return self.async_create_entry(
+                title=user_input[CONF_HUB_NAME],
+                data=self._data,
+            )
+
+        return self.async_show_form(
+            step_id="hubname",
+            data_schema=vol.Schema(
+                {vol.Optional(CONF_HUB_NAME, default=self._stop.name): cv.string}
+            ),
         )
 
     @staticmethod
@@ -291,8 +316,7 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
             }
 
         connections_dict: dict = {
-            x.id: f"{transport_to_str(x.product)} {x.name} - {x.destination.name}"
-            for x in self._connections.values()
+            x.id: f"{x.name} - {x.destination.name}" for x in self._connections.values()
         }
 
         return self.async_show_form(

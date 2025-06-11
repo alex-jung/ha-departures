@@ -5,7 +5,7 @@ from typing import Final
 NAME = "Public Transport Departures"
 DOMAIN = "ha_departures"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "1.1.0"
+VERSION = "2.0.0"
 
 ISSUE_URL = "https://github.com/alex-jung/ha-departures/issues"
 
@@ -19,6 +19,7 @@ CONF_STOP_ID = "stop_id"
 CONF_API_URL = "api_url"
 CONF_ENDPOINT = "endpoint"
 CONF_LINES = "lines"
+CONF_HUB_NAME = "hub_name"
 CONF_ERROR_NO_STOP_FOUND = "no_stop_found"
 CONF_ERROR_NO_CHANGES_OPTIONS = "no_changes_configured"
 CONF_ERROR_INVALID_RESPONSE = "invalid_api_response"

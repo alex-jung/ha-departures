@@ -2,6 +2,8 @@
 
 from apyefa import Departure, Line, TransportType
 
+from homeassistant.util import slugify
+
 
 def transport_to_str(t_type: TransportType):
     """Return human readable german translation of transport type."""
@@ -24,13 +26,13 @@ def transport_to_str(t_type: TransportType):
     return "Unknown"
 
 
-def create_unique_id(line: Line | dict[str, str]) -> str | None:
+def create_unique_id(line: Line | dict[str, str], hub_name: str) -> str | None:
     """Create an unique id for a line."""
     if isinstance(line, dict):
         line = Line.from_dict(line)
 
     if isinstance(line, Line):
-        return f"{line.id}-{line.product}-{line.destination.id}"
+        return f"{slugify(hub_name)}-{line.id}-{line.product}-{line.destination.id}"
 
     raise ValueError(f"Expected dict or Line object, got {type(line)}")
 
