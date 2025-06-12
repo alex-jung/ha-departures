@@ -78,9 +78,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             ),
         ]
 
-        self._attr_name = (
-            f"{coordinator.stop_name} - {self._line} - {self._destination.name}"
-        )
+        self._attr_name = f"[{coordinator.hub_name}]-{coordinator.stop_name}-{self._line}-{self._destination.name}"
         self._attr_unique_id = create_unique_id(line, coordinator.hub_name)
 
         self._attr_extra_state_attributes = {
