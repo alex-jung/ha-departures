@@ -158,7 +158,7 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
 
         # Migrate from minor version 1 to 2
         if config_entry.minor_version < 2:
-            new_data.update(CONF_HUB_NAME, config_entry.data.get(CONF_STOP_NAME))
+            new_data.update({CONF_HUB_NAME: config_entry.data.get(CONF_STOP_NAME)})
 
         hass.config_entries.async_update_entry(
             config_entry, data=new_data, minor_version=2, version=1
