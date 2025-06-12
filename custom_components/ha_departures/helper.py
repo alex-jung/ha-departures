@@ -37,6 +37,28 @@ def create_unique_id(line: Line | dict[str, str], hub_name: str) -> str | None:
     raise ValueError(f"Expected dict or Line object, got {type(line)}")
 
 
+def get_unique_lines(lines: list[Line]) -> list[Line]:
+    """
+    Returns a list of unique Line objects from the input list, preserving their original order.
+    A Line is considered unique based on its 'id' attribute.
+
+    Args:
+        lines (list[Line]): A list of Line objects to filter for uniqueness.
+
+    Returns:
+        list[Line]: A list containing only the first occurrence of each unique Line, based on 'id'.
+    """
+    result: list[Line] = []
+    unique_lines = set()
+
+    for line in lines:
+        if line.id not in unique_lines:
+            unique_lines.add(line.id)
+            result.append(line)
+
+    return result
+
+
 class UnstableDepartureTime:
     """Helper class to handle unstable departure times."""
 

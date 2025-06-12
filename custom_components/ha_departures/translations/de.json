@@ -49,6 +49,9 @@
             "lines": "Verbindungen"
           }
       }
+    },
+    "abort":{
+      "no_changes_configured": "Keine Änderungen konfiguriert"
     }
   }
 }

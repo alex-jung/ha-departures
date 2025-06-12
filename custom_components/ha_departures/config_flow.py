@@ -33,7 +33,7 @@ from .const import (
     DOMAIN,
     EFA_ENDPOINTS,
 )
-from .helper import create_unique_id
+from .helper import create_unique_id, get_unique_lines
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -156,14 +156,12 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         _errors: dict[str, str] = {}
 
         if user_input is not None:
-            # remove all duplicate lines
-            connections: list[Line] = []
-            available_lines = set()
+            connections: list[Line] = get_unique_lines(self._lines)
 
-            for line in self._lines:
-                if line.id in user_input[CONF_LINES] and line.id not in available_lines:
-                    available_lines.add(line.id)
-                    connections.append(line)
+            # filter connections by user input
+            connections = list(
+                filter(lambda x: x.id in user_input[CONF_LINES], connections)
+            )
 
             self._data = {
                 CONF_API_URL: self._url,
@@ -212,7 +210,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="hubname",
             data_schema=vol.Schema(
-                {vol.Optional(CONF_HUB_NAME, default=self._stop.name): cv.string}
+                {vol.Required(CONF_HUB_NAME, default=self._stop.name): cv.string}
             ),
         )
 
@@ -235,6 +233,7 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
         self._stop_name: str = config_entry.data.get(CONF_STOP_NAME)
         self._stop_id: str = config_entry.data.get(CONF_STOP_ID)
         self._url: str = config_entry.data.get(CONF_API_URL)
+        self._hub_name: str = config_entry.data.get(CONF_HUB_NAME)
 
         _LOGGER.debug("Start configuration")
 
@@ -280,7 +279,7 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
             # remove connection(s)
             for line_id in removed_connections:
-                uid = create_unique_id(line_id)
+                uid = create_unique_id(line_id, self._hub_name)
 
                 _LOGGER.debug("Remove connection with uid:%s", uid)
 
@@ -292,7 +291,10 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
                     entity_registry.async_remove(connections_map[uid])
 
                 updated_config = list(
-                    filter(lambda x: create_unique_id(x) != uid, updated_config)
+                    filter(
+                        lambda x: create_unique_id(x, self._hub_name) != uid,
+                        updated_config,
+                    )
                 )
 
             # add new connection(s)
@@ -309,11 +311,14 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
             return self.async_create_entry(data=self.config_entry.data)
 
-        # get all lines for stop
+        all_lines: list[Line] = []
+
         async with EfaClient(self._url) as client:
-            self._connections = {
-                x.id: x for x in await client.lines_by_location(self._stop_id)
-            }
+            all_lines = await client.lines_by_location(
+                self._stop_id, req_types=[LineRequestType.DEPARTURE_MONITOR]
+            )
+
+        self._connections = {x.id: x for x in get_unique_lines(all_lines)}
 
         connections_dict: dict = {
             x.id: f"{x.name} - {x.destination.name}" for x in self._connections.values()
