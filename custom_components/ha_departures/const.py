@@ -49,6 +49,7 @@ EFA_ENDPOINTS: Final = {
     # Baden-Württemberg
     "Verkehrsverbund Rhein-Neckar (VRN)": "https://www.vrn.de/mngvrn/",
     "Verkehrs- und Tarifverbund Stuttgart (VVS)": "https://www3.vvs.de/mngvvs/",
+    "Freiburger Verkehrs AG (VAG)": "https://efa.vagfr.de/vagfr3/",
     # Bayern
     "MoBY (Bahnland Bayern)": "https://bahnland-bayern.de/efa/",
     "Regensburger Verkehrsverbund (RVV)": "https://efa.rvv.de/efa/",
