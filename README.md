@@ -27,6 +27,14 @@ There is a list of known endpoints (will be updated continuously with each relea
     </tr>
   <tr><td colspan="2" style="background:#5D8736" align="center"><b>Baden-Württemberg</b></td></tr>
   <tr>
+    <td><a href="https://efa.vagfr.de/vagfr3/">Freiburger Verkehrs AG (VAG)</a></td>
+    <td align="center">To check</td>
+  </tr>
+  <tr>
+    <td><a href="https://www.efa-bw.de/bvb3/">Nahverkehrsgesellschaft Baden-Württemberg (nvbw)</a></td>
+    <td align="center">To check</td>
+  </tr>
+  <tr>
     <td><a href="https://www.vrn.de/mngvrn/">Verkehrsverbund Rhein-Neckar (VRN)</a></td>
     <td align="center">To check</td>
   </tr>
@@ -79,9 +87,7 @@ There is a list of known endpoints (will be updated continuously with each relea
 
 ### HACS Installation (recommended)
 
-> HACS integration is ongoing!
-
-Until it's finished you can install the integration by adding this repository as a custom repository in HACS, and install as normal.
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=alex-jung&repository=ha-departures&category=integration)
 
 ### Manual Installation
 
