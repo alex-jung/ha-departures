@@ -1,15 +1,16 @@
 """Adds config flow for Public Transport Departures."""
 
-from copy import deepcopy
 import logging
+from copy import deepcopy
 
+import homeassistant.helpers.config_validation as cv
+import homeassistant.helpers.entity_registry as er
+import voluptuous as vol
 from aiohttp import ConnectionTimeoutError
 from apyefa import EfaClient, Line, LineRequestType, Location, LocationFilter
 from apyefa.exceptions import EfaConnectionError, EfaResponseInvalid
 from homeassistant import config_entries
 from homeassistant.core import callback
-import homeassistant.helpers.config_validation as cv
-import homeassistant.helpers.entity_registry as er
 from homeassistant.helpers.selector import (
     SelectOptionDict,
     SelectSelector,
@@ -17,7 +18,6 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 from homeassistant.util import slugify
-import voluptuous as vol
 
 from .const import (
     CONF_API_URL,
