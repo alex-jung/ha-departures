@@ -1,7 +1,7 @@
 """Sensor platform for Public Transport Departures."""
 
-from datetime import datetime
 import logging
+from datetime import datetime
 
 from apyefa import Departure, Line, TransportType
 from homeassistant import config_entries, core
