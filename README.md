@@ -189,3 +189,11 @@ entities:
 ```
 Result looks like there:\
 ![ezgif-3-136a167cd5](https://github.com/user-attachments/assets/3b8b8a09-1067-4d90-924a-729616c6e765)
+
+## ☕ Support My Work
+
+If you enjoy my work or find it useful:
+
+[![Buy Me a Ko-fi](https://img.shields.io/badge/Support_on_Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/alexjungnbg)
+
+---
