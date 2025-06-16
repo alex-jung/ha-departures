@@ -109,13 +109,13 @@ The configuration of integration is made via Home Assistant GUI
 
 ### Configure a new station
 
-#### Step 1 - Choose the [API endpoint](#supported-efa-endpoints) and enter stop name  
+#### Step 1 - Choose the [API endpoint](#supported-efa-endpoints) and enter stop name
 
 ![image](https://github.com/user-attachments/assets/6341bb9c-58b1-4d94-bfc5-277dea779d37)
 
 #### Step 2 - Choose stop
 > In this step `ha-departures` integration will search for all locations matching provided stop name.
-> Please select one of them from the list 
+> Please select one of them from the list
 
 ![image](https://github.com/user-attachments/assets/88ca190f-b6dd-426d-b0ed-62929282645f)
 
@@ -189,3 +189,11 @@ entities:
 ```
 Result looks like there:\
 ![ezgif-3-136a167cd5](https://github.com/user-attachments/assets/3b8b8a09-1067-4d90-924a-729616c6e765)
+
+## ☕ Support My Work
+
+If you enjoy my work or find it useful:
+
+[![Buy Me a Ko-fi](https://img.shields.io/badge/Support_on_Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/alexjungnbg)
+
+---

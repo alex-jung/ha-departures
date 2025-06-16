@@ -4,3 +4,5 @@ pythonenv*
 .coverage
 venv
 .venv
+config/
+!config/configuration.yaml

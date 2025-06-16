@@ -6,8 +6,6 @@ import logging
 from aiohttp import ConnectionTimeoutError
 from apyefa import EfaClient, Line, LineRequestType, Location, LocationFilter
 from apyefa.exceptions import EfaConnectionError, EfaResponseInvalid
-import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.core import callback
 import homeassistant.helpers.config_validation as cv
@@ -19,6 +17,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 from homeassistant.util import slugify
+import voluptuous as vol
 
 from .const import (
     CONF_API_URL,
