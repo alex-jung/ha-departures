@@ -4,12 +4,11 @@ For more details about this integration, please refer to
 https://github.com/alex-jung/ha-departures
 """
 
-from datetime import timedelta
 import logging
+from datetime import timedelta
 
 from apyefa import Departure, EfaClient, Line
 from apyefa.exceptions import EfaConnectionError, EfaResponseInvalid
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant

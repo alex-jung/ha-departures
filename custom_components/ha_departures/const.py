@@ -5,7 +5,7 @@ from typing import Final
 NAME = "Public Transport Departures"
 DOMAIN = "ha_departures"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "2.0.0"
+VERSION = "1.1.2"
 
 ISSUE_URL = "https://github.com/alex-jung/ha-departures/issues"
 
@@ -48,6 +48,8 @@ ATTR_ESTIMATED_DEPARTURE_TIME_4: Final = "estimated_departure_time_4"
 # Endpoints
 EFA_ENDPOINTS: Final = {
     # Baden-Württemberg
+    "Freiburger Verkehrs AG (VAG)": "https://efa.vagfr.de/vagfr3/",
+    "Nahverkehrsgesellschaft Baden-Württemberg (nvbw)": "https://www.efa-bw.de/bvb3/",
     "Verkehrsverbund Rhein-Neckar (VRN)": "https://www.vrn.de/mngvrn/",
     "Verkehrs- und Tarifverbund Stuttgart (VVS)": "https://www3.vvs.de/mngvvs/",
     # Bayern
