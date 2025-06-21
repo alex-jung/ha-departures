@@ -32,8 +32,9 @@ from .const import (
     CONF_STOP_NAME,
     DOMAIN,
     EFA_ENDPOINTS,
+    VERSION,
 )
-from .helper import create_unique_id, get_unique_lines
+from .helper import create_unique_id, get_unique_lines, line_hash
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,11 +53,20 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._lines: list[Line] = []
         self._data: dict[str, str] = {}
 
+        _LOGGER.debug(" Start CONFIGURATION flow ".center(60, "="))
+        _LOGGER.debug(">> ha-departures version: %s", VERSION)
+        _LOGGER.debug(
+            ">> config flow version %s.%s",
+            DeparturesFlowHandler.VERSION,
+            DeparturesFlowHandler.MINOR_VERSION,
+        )
+
     async def async_step_user(self, user_input=None):
         """Handle a flow initialized by the user."""
         _errors: dict[str, str] = {}
 
-        _LOGGER.debug("Start step_user: %s", user_input)
+        _LOGGER.debug(' Start "step_user" '.center(60, "-"))
+        _LOGGER.debug(">> user input: %s", user_input)
 
         if user_input is not None:
             self._url = user_input[CONF_ENDPOINT]
@@ -75,10 +85,17 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
             if not _errors:
                 _LOGGER.debug(
-                    "%s stop(s) found for %s",
+                    '%s stop(s) found for "%s":',
                     len(self._all_stops),
                     user_input[CONF_STOP_NAME],
                 )
+
+                for stop in self._all_stops:
+                    _LOGGER.debug(
+                        "> %s(%s)",
+                        stop.name,
+                        stop.id,
+                    )
 
                 if not self._all_stops:
                     _errors[CONF_ERROR_NO_STOP_FOUND] = CONF_ERROR_NO_STOP_FOUND
@@ -112,7 +129,8 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle step to choose a stop from the available list."""
         _errors: dict[str, str] = {}
 
-        _LOGGER.debug("Start step_stop: %s", user_input)
+        _LOGGER.debug(' Start "step_stop" '.center(60, "-"))
+        _LOGGER.debug(">> user input: %s", user_input)
 
         if user_input is not None:
             self._stop = next(
@@ -123,10 +141,16 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.error("No stop found")
                 return self.async_abort(reason="No stop found")
 
+            _LOGGER.debug(
+                "Selected stop: %s(%s)",
+                self._stop.name,
+                self._stop.id,
+            )
+
             if not _errors:
                 return await self.async_step_lines()
 
-        options: list[SelectOptionDict] = [
+        stop_list: list[SelectOptionDict] = [
             SelectOptionDict(
                 label=stop.name,
                 value=stop.id,
@@ -140,7 +164,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_STOP_NAME): SelectSelector(
                         SelectSelectorConfig(
-                            options=options,
+                            options=stop_list,
                             multiple=False,
                             sort=True,
                             mode=SelectSelectorMode.DROPDOWN,
@@ -155,13 +179,26 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle step to choose needed lines."""
         _errors: dict[str, str] = {}
 
-        if user_input is not None:
-            connections: list[Line] = get_unique_lines(self._lines)
+        _LOGGER.debug(' Start "step_lines" '.center(60, "-"))
+        _LOGGER.debug(">> user input: %s", user_input)
 
+        if user_input is not None:
             # filter connections by user input
             connections = list(
-                filter(lambda x: x.id in user_input[CONF_LINES], connections)
+                filter(
+                    lambda x: line_hash(x) in user_input[CONF_LINES],
+                    self._lines,
+                )
             )
+
+            for line in connections:
+                _LOGGER.debug(
+                    "Selected line: %s(%s) -> %s(%s)",
+                    line.name,
+                    line.id,
+                    line.destination.name,
+                    line.destination.id,
+                )
 
             self._data = {
                 CONF_API_URL: self._url,
@@ -180,20 +217,50 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 self._stop.id, req_types=[LineRequestType.DEPARTURE_MONITOR]
             )
 
-        _directions: dict = {
-            x.id: f"{x.name} - {x.destination.name}" for x in self._lines
-        }
+        self._lines = get_unique_lines(self._lines)
+
+        _LOGGER.debug("Step lines: %s unique line(s) found:", len(self._lines))
+
+        for line in self._lines:
+            _LOGGER.debug(
+                "> %s(%s) --> %s(%s)",
+                line.name,
+                line.id,
+                line.destination.name,
+                line.destination.id,
+            )
+
+        line_list: list[SelectOptionDict] = [
+            SelectOptionDict(
+                label=f"{line.name} - {line.destination.name}",
+                value=line_hash(line),
+            )
+            for line in self._lines
+        ]
 
         return self.async_show_form(
             step_id="lines",
             data_schema=vol.Schema(
-                {vol.Required(CONF_LINES): cv.multi_select(_directions)}
+                {
+                    vol.Required(CONF_LINES): SelectSelector(
+                        SelectSelectorConfig(
+                            options=line_list,
+                            multiple=True,
+                            sort=True,
+                            mode=SelectSelectorMode.DROPDOWN,
+                        ),
+                    )
+                }
             ),
             errors=_errors,
         )
 
     async def async_step_hubname(self, user_input=None):
         """Handle step to define a hub name."""
+
+        _LOGGER.debug(' Start "step_hubname" '.center(60, "-"))
+        _LOGGER.debug(">> user input: %s", user_input)
+
         if user_input is not None:
             await self.async_set_unique_id(
                 user_input.get(CONF_HUB_NAME, self._stop.name)
@@ -226,10 +293,22 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
+
+        _LOGGER.debug(" Start OPTIONS flow ".center(60, "="))
+        _LOGGER.debug(">> ha-departures version: %s", VERSION)
+        _LOGGER.debug(
+            ">> config flow version %s.%s",
+            DeparturesFlowHandler.VERSION,
+            DeparturesFlowHandler.MINOR_VERSION,
+        )
+        _LOGGER.debug(
+            ">> config entry: %s(uid=%s)", config_entry.title, config_entry.unique_id
+        )
+
         self._connections_selected: list[Line] = [
             Line.from_dict(x) for x in config_entry.data.get(CONF_LINES, [])
         ]
-        self._connections: dict[str, Line] = []
+        self._connections: list[Line] = []
         self._stop_name: str = config_entry.data.get(CONF_STOP_NAME)
         self._stop_id: str = config_entry.data.get(CONF_STOP_ID)
         self._url: str = config_entry.data.get(CONF_API_URL)
@@ -239,30 +318,51 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         """Handle a flow initialized by the user."""
-        if user_input is not None:
-            new_selected_ids = user_input[CONF_LINES]
-            old_selected_ids = [x.id for x in self._connections_selected]
 
-            removed_connections = list(
-                filter(lambda x: x not in new_selected_ids, old_selected_ids)
-            )
-            added_connections = list(
+        _LOGGER.debug(' Start "step_init" '.center(60, "-"))
+        _LOGGER.debug(">> user input: %s", user_input)
+
+        if user_input is not None:
+            lines_new = user_input.get(CONF_LINES, [])
+            lines_old = [line_hash(x) for x in self._connections_selected]
+
+            # hash values of removed and added lines
+            lines_hash_removed = list(filter(lambda x: x not in lines_new, lines_old))
+            lines_hash_added = list(filter(lambda x: x not in lines_old, lines_new))
+
+            # convert lists of hashes to list of Line objects
+            removed_connections: list[Line] = list(
                 filter(
-                    lambda x: x not in old_selected_ids,
-                    new_selected_ids,
+                    lambda x: line_hash(x) in lines_hash_removed,
+                    self._connections_selected,
+                )
+            )
+            added_connections: list[Line] = list(
+                filter(
+                    lambda x: line_hash(x) in lines_hash_added,
+                    self._connections,
                 )
             )
 
-            # convert list of IDs to list of Lines
-            removed_connections: list[Line] = [
-                self._connections.get(x) for x in removed_connections
-            ]
-            added_connections: list[Line] = [
-                self._connections.get(x) for x in added_connections
-            ]
+            _LOGGER.debug(" Connections removed ".center(60, "="))
+            for line in removed_connections:
+                _LOGGER.debug(
+                    ">> %s(%s) -> %s(%s)",
+                    line.name,
+                    line.id,
+                    line.destination.name,
+                    line.destination.id,
+                )
 
-            _LOGGER.debug("Removed: %s", removed_connections)
-            _LOGGER.debug("Added: %s", added_connections)
+            _LOGGER.debug(" Connections added ".center(60, "="))
+            for line in added_connections:
+                _LOGGER.debug(
+                    ">> %s(%s) -> %s(%s)",
+                    line.name,
+                    line.id,
+                    line.destination.name,
+                    line.destination.id,
+                )
 
             if not removed_connections and not added_connections:
                 _LOGGER.debug("No changes on entry configuration detected")
@@ -279,20 +379,20 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
             # remove connection(s)
             for line_id in removed_connections:
-                uid = create_unique_id(line_id, self._hub_name)
+                uid = create_unique_id(line_id)
 
-                _LOGGER.debug("Remove connection with uid:%s", uid)
+                _LOGGER.debug('Remove connection "%s"', uid)
 
                 entity_to_remove = connections_map.get(uid)
 
                 if not entity_to_remove:
-                    _LOGGER.error("Entity to remove %s not found in map", uid)
+                    _LOGGER.error('Entity to remove "%s" not found in map', uid)
                 else:
                     entity_registry.async_remove(connections_map[uid])
 
                 updated_config = list(
                     filter(
-                        lambda x: create_unique_id(x, self._hub_name) != uid,
+                        lambda x: create_unique_id(x) != uid,
                         updated_config,
                     )
                 )
@@ -311,26 +411,36 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
             return self.async_create_entry(data=self.config_entry.data)
 
-        all_lines: list[Line] = []
+        self._connections: list[Line] = []
 
         async with EfaClient(self._url) as client:
-            all_lines = await client.lines_by_location(
+            self._connections = await client.lines_by_location(
                 self._stop_id, req_types=[LineRequestType.DEPARTURE_MONITOR]
             )
 
-        self._connections = {x.id: x for x in get_unique_lines(all_lines)}
-
-        connections_dict: dict = {
-            x.id: f"{x.name} - {x.destination.name}" for x in self._connections.values()
-        }
+        line_list: list[SelectOptionDict] = [
+            SelectOptionDict(
+                label=f"{line.name} - {line.destination.name}",
+                value=line_hash(line),
+            )
+            for line in get_unique_lines(self._connections)
+        ]
 
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        "lines", default=[x.id for x in self._connections_selected]
-                    ): cv.multi_select(connections_dict),
+                        "lines",
+                        default=[line_hash(x) for x in self._connections_selected],
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=line_list,
+                            multiple=True,
+                            sort=True,
+                            mode=SelectSelectorMode.DROPDOWN,
+                        ),
+                    )
                 }
             ),
         )

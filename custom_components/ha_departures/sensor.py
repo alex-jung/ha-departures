@@ -80,7 +80,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = (
             f"{coordinator.stop_name}-{self._line}-{self._destination.name}"
         )
-        self._attr_unique_id = create_unique_id(line, coordinator.hub_name)
+        self._attr_unique_id = create_unique_id(line)
 
         self._attr_extra_state_attributes = {
             ATTR_LINE_NAME: self._line,
@@ -123,9 +123,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
         debug_title = f" Update '{self._line}' -> '{self._destination.name}' "
 
-        _LOGGER.debug(
-            debug_title.center(70, "=")  # Center the debug message
-        )
+        _LOGGER.debug(debug_title.center(70, "="))  # Center the debug message
         _LOGGER.debug(">> Unique ID: %s", self.unique_id)
 
         departures: list[Departure] = list(
