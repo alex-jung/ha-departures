@@ -27,6 +27,14 @@ There is a list of known endpoints (will be updated continuously with each relea
     </tr>
   <tr><td colspan="2" style="background:#5D8736" align="center"><b>Baden-Württemberg</b></td></tr>
   <tr>
+    <td><a href="https://efa.vagfr.de/vagfr3/">Freiburger Verkehrs AG (VAG)</a></td>
+    <td align="center">To check</td>
+  </tr>
+  <tr>
+    <td><a href="https://www.efa-bw.de/bvb3/">Nahverkehrsgesellschaft Baden-Württemberg (nvbw)</a></td>
+    <td align="center">To check</td>
+  </tr>
+  <tr>
     <td><a href="https://www.vrn.de/mngvrn/">Verkehrsverbund Rhein-Neckar (VRN)</a></td>
     <td align="center">To check</td>
   </tr>
@@ -83,9 +91,7 @@ There is a list of known endpoints (will be updated continuously with each relea
 
 ### HACS Installation (recommended)
 
-> HACS integration is ongoing!
-
-Until it's finished you can install the integration by adding this repository as a custom repository in HACS, and install as normal.
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=alex-jung&repository=ha-departures&category=integration)
 
 ### Manual Installation
 
@@ -107,13 +113,13 @@ The configuration of integration is made via Home Assistant GUI
 
 ### Configure a new station
 
-#### Step 1 - Choose the [API endpoint](#supported-efa-endpoints) and enter stop name  
+#### Step 1 - Choose the [API endpoint](#supported-efa-endpoints) and enter stop name
 
 ![image](https://github.com/user-attachments/assets/6341bb9c-58b1-4d94-bfc5-277dea779d37)
 
 #### Step 2 - Choose stop
 > In this step `ha-departures` integration will search for all locations matching provided stop name.
-> Please select one of them from the list 
+> Please select one of them from the list
 
 ![image](https://github.com/user-attachments/assets/88ca190f-b6dd-426d-b0ed-62929282645f)
 
@@ -187,3 +193,11 @@ entities:
 ```
 Result looks like there:\
 ![ezgif-3-136a167cd5](https://github.com/user-attachments/assets/3b8b8a09-1067-4d90-924a-729616c6e765)
+
+## ☕ Support My Work
+
+If you enjoy my work or find it useful:
+
+[![Buy Me a Ko-fi](https://img.shields.io/badge/Support_on_Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/alexjungnbg)
+
+---
