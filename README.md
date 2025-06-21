@@ -59,6 +59,10 @@ There is a list of known endpoints (will be updated continuously with each relea
   </tr>
   <tr><td colspan="2" style="background:#5D8736" align="center"><b>Nordrhein-Westfalen</b></td></tr>
   <tr>
+    <td><a href="https://avv.efa.de/efa/">Aachener Verkehrsverbund</a></td>
+    <td align="center">No</td>
+  </tr>
+  <tr>
     <td><a href="https://www.westfalenfahrplan.de/nwl-efa/">Der WestfalenTarif</a></td>
     <td align="center">To check</td>
   </tr>

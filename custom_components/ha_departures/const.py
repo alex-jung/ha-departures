@@ -26,7 +26,6 @@ CONF_ERROR_INVALID_RESPONSE = "invalid_api_response"
 CONF_ERROR_CONNECTION_FAILED = "connection_failed"
 
 # Sensor attributes
-ATTR_LINE_ID: Final = "line_id"
 ATTR_LINE_NAME: Final = "line_name"
 ATTR_STOP_ID: Final = "stop_id"
 ATTR_TRANSPORT_TYPE: Final = "transport"
@@ -58,6 +57,7 @@ EFA_ENDPOINTS: Final = {
     "Verkehrsgesellschaft Mecklenburg-Vorpommern mbH (VMV)": "https://fahrplanauskunft-mv.de/vmv-efa/",
     # Nordrhein-Westfalen
     "Der WestfalenTarif": "https://www.westfalenfahrplan.de/nwl-efa/",
+    "Aachener Verkehrsverbund (AVV)": "https://avv.efa.de/efa/",
     # Rheinland-Pfalz
     "Rolph.de": "https://mandanten.vrn.de/takt2/",
     # Sachsen
