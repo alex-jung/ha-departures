@@ -17,7 +17,6 @@ from .const import (
     ATTR_ESTIMATED_DEPARTURE_TIME_2,
     ATTR_ESTIMATED_DEPARTURE_TIME_3,
     ATTR_ESTIMATED_DEPARTURE_TIME_4,
-    ATTR_LINE_ID,
     ATTR_LINE_NAME,
     ATTR_PLANNED_DEPARTURE_TIME,
     ATTR_PLANNED_DEPARTURE_TIME_1,
@@ -78,14 +77,15 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             ),
         ]
 
-        self._attr_name = f"[{coordinator.hub_name}]-{coordinator.stop_name}-{self._line}-{self._destination.name}"
+        self._attr_name = (
+            f"{coordinator.stop_name}-{self._line}-{self._destination.name}"
+        )
         self._attr_unique_id = create_unique_id(line, coordinator.hub_name)
 
         self._attr_extra_state_attributes = {
             ATTR_LINE_NAME: self._line,
             ATTR_TRANSPORT_TYPE: self._transport.name,
             ATTR_DIRECTION: line.destination.name,
-            ATTR_LINE_ID: line.id,
             ATTR_PLANNED_DEPARTURE_TIME: None,
         }
 
@@ -121,6 +121,13 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
 
+        debug_title = f" Update '{self._line}' -> '{self._destination.name}' "
+
+        _LOGGER.debug(
+            debug_title.center(70, "=")  # Center the debug message
+        )
+        _LOGGER.debug(">> Unique ID: %s", self.unique_id)
+
         departures: list[Departure] = list(
             filter(
                 lambda x: x.line_name == self._line
@@ -130,14 +137,10 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         )
 
         if not departures:
-            _LOGGER.debug("No departures found for %s", self.unique_id)
+            _LOGGER.debug(">> No departures found")
             self.clear_times()
 
             return
-
-        _LOGGER.debug(
-            "Sensor '%s' received %s departure(s)", self.unique_id, len(departures)
-        )
 
         self._update_times(departures)
 
@@ -168,12 +171,6 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         )
 
     def _update_times(self, departures: list[Departure]):
-        _LOGGER.debug(
-            "Updating times for %s-%s:",
-            self._line,
-            self.extra_state_attributes[ATTR_DIRECTION],
-        )
-
         for i in range(5):
             planned_time = departures[i].planned_time if i < len(departures) else None
             estimated_time = (
@@ -181,7 +178,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             )
 
             _LOGGER.debug(
-                "Departure %s: %s -> %s",
+                ">> [%s]: %s -> %s",
                 i,
                 planned_time,
                 estimated_time,
