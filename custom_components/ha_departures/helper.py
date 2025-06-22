@@ -1,6 +1,11 @@
 """Helper function for custom integration."""
 
+import logging
+import re
+
 from apyefa import Departure, Line, TransportType
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def transport_to_str(t_type: TransportType):
@@ -24,15 +29,51 @@ def transport_to_str(t_type: TransportType):
     return "Unknown"
 
 
+def line_hash(line: Line) -> str:
+    """Return a hash of the line object."""
+    return str(hash(f"{line.id}-{line.destination.name}"))
+
+
 def create_unique_id(line: Line | dict[str, str]) -> str | None:
     """Create an unique id for a line."""
     if isinstance(line, dict):
         line = Line.from_dict(line)
 
     if isinstance(line, Line):
-        return f"{line.id}-{line.product}-{line.destination.id}"
+        line_id_new = re.sub(r"j2\d{1}", "jxx", line.id)
+
+        return f"{line_id_new}-{line.product}-{line.destination.id}"
 
     raise ValueError(f"Expected dict or Line object, got {type(line)}")
+
+
+def get_unique_lines(lines: list[Line]) -> list[Line]:
+    """Return a list of unique Line objects from the input list, preserving their original order."""
+    result: list[Line] = []
+    unique_lines = set()
+
+    _LOGGER.debug("Starting to filter unique lines from the list")
+
+    for line in lines:
+        if (line.id, line.destination.name) not in unique_lines:
+            unique_lines.add((line.id, line.destination.name))
+            result.append(line)
+
+            _LOGGER.debug(
+                'Add line: %s(%s) --> "%s"',
+                line.name,
+                line.id,
+                line.destination.name,
+            )
+        else:
+            _LOGGER.warning(
+                'Duplicate line: %s(%s) --> "%s"',
+                line.name,
+                line.id,
+                line.destination.name,
+            )
+
+    return result
 
 
 class UnstableDepartureTime:

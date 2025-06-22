@@ -27,7 +27,7 @@
       },
       "hubname": {
         "title": "Public Transport Departures",
-        "description": "Please enter name of new hub:",
+        "description": "Please enter name of new configuration hub:",
         "data": {
           "hub_name": "Hub name"
         }
@@ -39,7 +39,7 @@
       "connection_failed": "Connection to EFA endpoint failed. Try later again."
     },
     "abort": {
-      "already_configured": "[%key:common::config_flow::abort::already_configured_location%]"
+      "already_configured": "This stop is already configured"
     }
   },
   "options": {
