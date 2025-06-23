@@ -425,6 +425,17 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
             for line in get_unique_lines(self._connections)
         ]
 
+        for line in line_list:
+            _LOGGER.debug("> %s", line)
+
+        default_list = [line_hash(x) for x in self._connections_selected]
+
+        for line in default_list:
+            _LOGGER.debug(
+                ">> Selected line: %s",
+                next(filter(lambda x: x["value"] == line, line_list), None),
+            )
+
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(

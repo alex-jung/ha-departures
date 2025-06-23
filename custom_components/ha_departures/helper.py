@@ -31,7 +31,7 @@ def transport_to_str(t_type: TransportType):
 
 def line_hash(line: Line) -> str:
     """Return a hash of the line object."""
-    return str(hash(f"{line.id}-{line.destination.name}"))
+    return str(hash(f"{line.id}"))
 
 
 def create_unique_id(line: Line | dict[str, str]) -> str | None:
