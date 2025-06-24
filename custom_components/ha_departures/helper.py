@@ -1,5 +1,6 @@
 """Helper function for custom integration."""
 
+from datetime import datetime
 import logging
 import re
 
@@ -40,11 +41,31 @@ def create_unique_id(line: Line | dict[str, str]) -> str | None:
         line = Line.from_dict(line)
 
     if isinstance(line, Line):
-        line_id_new = re.sub(r"j2\d{1}", "jxx", line.id)
-
-        return f"{line_id_new}-{line.product}-{line.destination.id}"
+        return f"{replace_year_in_id(line.id)}-{line.product}-{line.destination.id}"
 
     raise ValueError(f"Expected dict or Line object, got {type(line)}")
+
+
+def replace_year_in_id(line_id: str, xx: bool = True) -> str:
+    """Replace the year in the line id with 'xx' or with current year.
+
+    Args:
+        line_id (str): The line id to modify.
+        xx (bool): If True, replace the year with 'xx', otherwise replace with the current year.
+
+    Returns:
+        str: The modified line id with the year replaced by 'xx'.
+
+    """
+    if xx:
+        current_year = "xx"
+    else:
+        # Get the current year in two-digit format
+        # This is used to replace the year in the line_id
+        # Example: "j25" -> "j26" for year 2026
+        current_year = datetime.now().strftime("%y")
+
+    return re.sub(r"j2\d{1}", f"j{current_year}", line_id)
 
 
 def get_unique_lines(lines: list[Line]) -> list[Line]:

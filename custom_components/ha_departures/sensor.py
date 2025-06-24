@@ -1,15 +1,17 @@
 """Sensor platform for Public Transport Departures."""
 
-import logging
 from datetime import datetime
+import logging
 
 from apyefa import Departure, Line, TransportType
+
 from homeassistant import config_entries, core
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import DeparturesDataUpdateCoordinator
 from .const import (
+    ATTE_LINE_ID,
     ATTR_DIRECTION,
     ATTR_ESTIMATED_DEPARTURE_TIME,
     ATTR_ESTIMATED_DEPARTURE_TIME_1,
@@ -24,7 +26,7 @@ from .const import (
     ATTR_PLANNED_DEPARTURE_TIME_4,
     ATTR_TRANSPORT_TYPE,
 )
-from .helper import UnstableDepartureTime, create_unique_id
+from .helper import UnstableDepartureTime, create_unique_id, replace_year_in_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,6 +58,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         self._hass = hass
         self._transport = line.product
         self._line = line.name
+        self._line_id = line.id
         self._destination = line.destination
         self._value = None
         self._times = [
@@ -83,6 +86,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
         self._attr_extra_state_attributes = {
             ATTR_LINE_NAME: self._line,
+            ATTE_LINE_ID: replace_year_in_id(self._line_id, False),
             ATTR_TRANSPORT_TYPE: self._transport.name,
             ATTR_DIRECTION: line.destination.name,
             ATTR_PLANNED_DEPARTURE_TIME: None,
@@ -122,13 +126,12 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
         debug_title = f" Update '{self._line}' -> '{self._destination.name}' "
 
-        _LOGGER.debug(debug_title.center(70, "="))  # Center the debug message
+        _LOGGER.debug(debug_title.center(70, "="))
         _LOGGER.debug(">> Unique ID: %s", self.unique_id)
 
         departures: list[Departure] = list(
             filter(
-                lambda x: x.line_name == self._line
-                and x.destination.id == self._destination.id,
+                lambda x: x.line_id == self._line_id,
                 self.coordinator.data,
             )
         )

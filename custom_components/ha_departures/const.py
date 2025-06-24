@@ -5,7 +5,7 @@ from typing import Final
 NAME = "Public Transport Departures"
 DOMAIN = "ha_departures"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "2.0.1"
+VERSION = "2.0.2"
 
 ISSUE_URL = "https://github.com/alex-jung/ha-departures/issues"
 
@@ -27,6 +27,7 @@ CONF_ERROR_CONNECTION_FAILED = "connection_failed"
 
 # Sensor attributes
 ATTR_LINE_NAME: Final = "line_name"
+ATTE_LINE_ID: Final = "line_id"
 ATTR_STOP_ID: Final = "stop_id"
 ATTR_TRANSPORT_TYPE: Final = "transport"
 ATTR_DIRECTION: Final = "direction"
