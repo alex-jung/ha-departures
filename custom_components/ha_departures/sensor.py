@@ -86,8 +86,8 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             ATTR_LINE_NAME: self._line,
             ATTR_TRANSPORT_TYPE: self._transport.name,
             ATTR_DIRECTION: line.destination.name,
-            ATTR_PLANNED_DEPARTURE_TIME: None,
             ATTR_PROVIDER_URL: coordinator.api_url,
+            ATTR_PLANNED_DEPARTURE_TIME: None,
         }
 
         _LOGGER.debug('ha-departures sensor "%s" created', self.unique_id)
