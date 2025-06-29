@@ -76,6 +76,11 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator):
         """Return lines/sensors belong to this config entry."""
         return self._lines
 
+    @property
+    def api_url(self):
+        """Return Provider API URL."""
+        return self._url
+
     async def _async_update_data(self):
         """Fetch data from endpoint."""
 
