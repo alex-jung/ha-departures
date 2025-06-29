@@ -22,6 +22,7 @@ from .const import (
     ATTR_PLANNED_DEPARTURE_TIME_2,
     ATTR_PLANNED_DEPARTURE_TIME_3,
     ATTR_PLANNED_DEPARTURE_TIME_4,
+    ATTR_PROVIDER_URL,
     ATTR_TRANSPORT_TYPE,
 )
 from .helper import UnstableDepartureTime, create_unique_id
@@ -85,6 +86,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             ATTR_LINE_NAME: self._line,
             ATTR_TRANSPORT_TYPE: self._transport.name,
             ATTR_DIRECTION: line.destination.name,
+            ATTR_PROVIDER_URL: coordinator.api_url,
             ATTR_PLANNED_DEPARTURE_TIME: None,
         }
 

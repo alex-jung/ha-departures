@@ -5,7 +5,7 @@ from typing import Final
 NAME = "Public Transport Departures"
 DOMAIN = "ha_departures"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "2.0.1"
+VERSION = "2.0.2"
 
 ISSUE_URL = "https://github.com/alex-jung/ha-departures/issues"
 
@@ -32,6 +32,7 @@ ATTR_TRANSPORT_TYPE: Final = "transport"
 ATTR_DIRECTION: Final = "direction"
 ATTR_DIRECTION_TEXT: Final = "direction_text"
 ATTR_DEPARTURES: Final = "departures"
+ATTR_PROVIDER_URL: Final = "data_provider"
 ATTR_PLANNED_DEPARTURE_TIME: Final = "planned_departure_time"
 ATTR_PLANNED_DEPARTURE_TIME_1: Final = "planned_departure_time_1"
 ATTR_PLANNED_DEPARTURE_TIME_2: Final = "planned_departure_time_2"
