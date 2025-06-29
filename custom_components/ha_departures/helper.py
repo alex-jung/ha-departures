@@ -1,8 +1,8 @@
 """Helper function for custom integration."""
 
-from datetime import datetime
 import logging
 import re
+from datetime import datetime
 
 from apyefa import Departure, Line, TransportType
 

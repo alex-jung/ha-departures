@@ -1,23 +1,22 @@
 """Sensor platform for Public Transport Departures."""
 
-from datetime import datetime
 import logging
+from datetime import datetime
 
 from apyefa import Departure, Line, TransportType
-
 from homeassistant import config_entries, core
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import DeparturesDataUpdateCoordinator
 from .const import (
-    ATTE_LINE_ID,
     ATTR_DIRECTION,
     ATTR_ESTIMATED_DEPARTURE_TIME,
     ATTR_ESTIMATED_DEPARTURE_TIME_1,
     ATTR_ESTIMATED_DEPARTURE_TIME_2,
     ATTR_ESTIMATED_DEPARTURE_TIME_3,
     ATTR_ESTIMATED_DEPARTURE_TIME_4,
+    ATTR_LINE_ID,
     ATTR_LINE_NAME,
     ATTR_PLANNED_DEPARTURE_TIME,
     ATTR_PLANNED_DEPARTURE_TIME_1,
@@ -86,7 +85,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
         self._attr_extra_state_attributes = {
             ATTR_LINE_NAME: self._line,
-            ATTE_LINE_ID: replace_year_in_id(self._line_id, False),
+            ATTR_LINE_ID: replace_year_in_id(self._line_id, False),
             ATTR_TRANSPORT_TYPE: self._transport.name,
             ATTR_DIRECTION: line.destination.name,
             ATTR_PLANNED_DEPARTURE_TIME: None,
