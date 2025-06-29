@@ -27,6 +27,7 @@ CONF_ERROR_CONNECTION_FAILED = "connection_failed"
 
 # Sensor attributes
 ATTR_LINE_NAME: Final = "line_name"
+ATTR_LINE_ID: Final = "line_id"
 ATTR_STOP_ID: Final = "stop_id"
 ATTR_TRANSPORT_TYPE: Final = "transport"
 ATTR_DIRECTION: Final = "direction"
