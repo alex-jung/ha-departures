@@ -26,7 +26,13 @@ from .const import (
     ATTR_PROVIDER_URL,
     ATTR_TRANSPORT_TYPE,
 )
-from .helper import UnstableDepartureTime, create_unique_id, replace_year_in_id
+from .helper import (
+    UnstableDepartureTime,
+    create_unique_id,
+    filter_current_year_departures,
+    filter_sensor_departures,
+    replace_year_in_id,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -130,12 +136,15 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         _LOGGER.debug(debug_title.center(70, "="))
         _LOGGER.debug(">> Unique ID: %s", self.unique_id)
 
-        departures: list[Departure] = list(
-            filter(
-                lambda x: x.line_id == self._line_id,
-                self.coordinator.data,
-            )
-        )
+        departures: list[Departure] = []
+
+        departures = filter_current_year_departures(self.coordinator.data)
+
+        _LOGGER.debug(">> After year filter: %s departures", len(departures))
+
+        departures = filter_sensor_departures(departures, self._line_id)
+
+        _LOGGER.debug(">> After sensor filter: %s departures", len(departures))
 
         if not departures:
             _LOGGER.debug(">> No departures found")

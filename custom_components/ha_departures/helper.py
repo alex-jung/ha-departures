@@ -1,8 +1,8 @@
 """Helper function for custom integration."""
 
+from datetime import datetime
 import logging
 import re
-from datetime import datetime
 
 from apyefa import Departure, Line, TransportType
 
@@ -44,6 +44,74 @@ def create_unique_id(line: Line | dict[str, str]) -> str | None:
         return f"{replace_year_in_id(line.id)}-{line.product}-{line.destination.id}"
 
     raise ValueError(f"Expected dict or Line object, got {type(line)}")
+
+
+def filter_current_year_departures(departures: list[Departure]) -> list[Departure]:
+    """Filter departures to only include those for the current year."""
+    current_year = datetime.now().strftime("%y")
+
+    return [
+        departure
+        for departure in departures
+        if extract_year_from_line_id(departure.line_id) == current_year
+    ]
+
+
+def filter_sensor_departures(departures: list[Departure], line_id: str):
+    """Filter departures to only include those for a specific line id."""
+    if not line_id:
+        return departures
+
+    # Filter departures by line_id without comparing the year
+    # This allows for matching line ids that may have different years
+    return [
+        departure
+        for departure in departures
+        if compare_line_ids(departure.line_id, line_id, compare_year=False)
+    ]
+
+
+def extract_year_from_line_id(line_id: str) -> str:
+    """Extract the year from the line id.
+
+    Args:
+        line_id (str): The line id to extract the year from.
+
+    Returns:
+        str: The extracted year in two-digit format.
+
+    """
+    (_, year) = line_id.rsplit(":", 1)
+
+    _year = re.findall(r"\d+", year)
+
+    if _year:
+        return _year[0]
+
+    return ""
+
+
+def compare_line_ids(line_id1: str, line_id2: str, compare_year: bool = True) -> bool:
+    """Compare two line IDs for equality, with an option to ignore the year component.
+
+    Args:
+        line_id1 (str): The first line ID to compare.
+        line_id2 (str): The second line ID to compare.
+        compare_year (bool, optional): If True, compares the full line IDs including the year.
+            If False, compares only the part before the last colon (':'), effectively ignoring the year.
+            Defaults to True.
+
+    Returns:
+        bool: True if the line IDs are considered equal based on the comparison mode, False otherwise.
+
+    """
+    if compare_year:
+        return line_id1 == line_id2
+
+    (line_id1, _) = line_id1.rsplit(":", 1)
+    (line_id2, _) = line_id2.rsplit(":", 1)
+
+    return line_id1 == line_id2
 
 
 def replace_year_in_id(line_id: str, xx: bool = True) -> str:
