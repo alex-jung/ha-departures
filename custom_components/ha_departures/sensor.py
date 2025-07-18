@@ -29,8 +29,8 @@ from .const import (
 from .helper import (
     UnstableDepartureTime,
     create_unique_id,
-    filter_current_year_departures,
-    filter_sensor_departures,
+    filter_by_line_id,
+    filter_identical_departures,
     replace_year_in_id,
 )
 
@@ -138,13 +138,18 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
         departures: list[Departure] = []
 
-        departures = filter_current_year_departures(self.coordinator.data)
+        _LOGGER.debug(
+            ">> Before line id filtering: %s departures", len(self.coordinator.data)
+        )
+        departures = filter_by_line_id(self.coordinator.data, self._line_id)
 
-        _LOGGER.debug(">> After year filter: %s departures", len(departures))
+        _LOGGER.debug(
+            ">> Before identical departures filtering: %s departures",
+            len(self.coordinator.data),
+        )
+        departures = filter_identical_departures(departures)
 
-        departures = filter_sensor_departures(departures, self._line_id)
-
-        _LOGGER.debug(">> After sensor filter: %s departures", len(departures))
+        _LOGGER.debug(">> After all filters: %s departures", len(self.coordinator.data))
 
         if not departures:
             _LOGGER.debug(">> No departures found")
