@@ -4,3 +4,4 @@ pip>=21.3.1
 ruff>=0.12.2
 pytest-homeassistant-custom-component>=0.13.236
 pytest-cov>=6.0.0
+apyefa>=1.0.1
