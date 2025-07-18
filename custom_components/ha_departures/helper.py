@@ -1,8 +1,8 @@
 """Helper function for custom integration."""
 
-from datetime import datetime
 import logging
 import re
+from datetime import datetime
 
 from apyefa import Departure, Line, TransportType
 
@@ -46,49 +46,48 @@ def create_unique_id(line: Line | dict[str, str]) -> str | None:
     raise ValueError(f"Expected dict or Line object, got {type(line)}")
 
 
-def filter_current_year_departures(departures: list[Departure]) -> list[Departure]:
-    """Filter departures to only include those for the current year."""
-    current_year = datetime.now().strftime("%y")
-
-    return [
-        departure
-        for departure in departures
-        if extract_year_from_line_id(departure.line_id) == current_year
-    ]
-
-
-def filter_sensor_departures(departures: list[Departure], line_id: str):
-    """Filter departures to only include those for a specific line id."""
-    if not line_id:
-        return departures
-
-    # Filter departures by line_id without comparing the year
-    # This allows for matching line ids that may have different years
-    return [
-        departure
-        for departure in departures
-        if compare_line_ids(departure.line_id, line_id, compare_year=False)
-    ]
-
-
-def extract_year_from_line_id(line_id: str) -> str:
-    """Extract the year from the line id.
+def filter_by_line_id(departures: list[Departure], line_id: str) -> list[Departure]:
+    """Filter departures by line id.
 
     Args:
-        line_id (str): The line id to extract the year from.
+        departures (list[Departure]): The list of departures to filter.
+        line_id (str): The line id to filter by.
 
     Returns:
-        str: The extracted year in two-digit format.
+        list[Departure]: The filtered list of departures.
 
     """
-    (_, year) = line_id.rsplit(":", 1)
+    if not line_id:
+        _LOGGER.warning(">> No line_id provided, returning all departures")
+        return departures
 
-    _year = re.findall(r"\d+", year)
+    return [
+        departure
+        for departure in departures
+        if compare_line_ids(departure.line_id, line_id)
+    ]
 
-    if _year:
-        return _year[0]
 
-    return ""
+def filter_identical_departures(departures: list[Departure]) -> list[Departure]:
+    """Filter out identical departures based on their line_id and planned time.
+
+    Args:
+        departures (list[Departure]): The list of departures to filter.
+
+    Returns:
+        list[Departure]: The filtered list of departures with unique line_id and planned time combinations.
+
+    """
+    seen = set()
+    unique_departures = []
+
+    for departure in departures:
+        key = (departure.line_id, departure.planned_time)
+        if key not in seen:
+            seen.add(key)
+            unique_departures.append(departure)
+
+    return unique_departures
 
 
 def compare_line_ids(line_id1: str, line_id2: str, compare_year: bool = True) -> bool:
