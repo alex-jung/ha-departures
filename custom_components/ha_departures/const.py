@@ -48,6 +48,8 @@ ATTR_ESTIMATED_DEPARTURE_TIME_4: Final = "estimated_departure_time_4"
 
 # Endpoints
 EFA_ENDPOINTS: Final = {
+    # General EFA endpoint
+    "General EFA": "https://www.efa.de/efa/",
     # Baden-Württemberg
     "Freiburger Verkehrs AG (VAG)": "https://efa.vagfr.de/vagfr3/",
     "Nahverkehrsgesellschaft Baden-Württemberg (nvbw)": "https://www.efa-bw.de/bvb3/",

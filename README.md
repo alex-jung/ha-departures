@@ -21,10 +21,15 @@ There is a list of known endpoints (will be updated continuously with each relea
 > If more EFA endpoints are known to you, please write me a short messge or create a new issue and provide API URL. After a check I will add them to supported API's.
 
 <table>
-    <tr>
+  <tr>
       <th>Name</th>
       <th>Supports real time</th>
     </tr>
+  <tr><td colspan="2" style="background:#5D8736" align="center"><b>General</b></td></tr>
+  <tr>
+    <td><a href="https://www.efa.de/efa/">General EFA </a></td>
+    <td align="center">No</td>
+  </tr>
   <tr><td colspan="2" style="background:#5D8736" align="center"><b>Baden-Württemberg</b></td></tr>
   <tr>
     <td><a href="https://efa.vagfr.de/vagfr3/">Freiburger Verkehrs AG (VAG)</a></td>
@@ -82,7 +87,7 @@ There is a list of known endpoints (will be updated continuously with each relea
   <tr><td colspan="2" style="background:#5D8736" align="center"><b>Sachsen</b></td></tr>
   <tr>
     <td><a href="https://efa.vvo-online.de/VMSSL3/">Verkehrsverbund Mittelsachsen GmbH (VMS)</a></td>
-    <td align="center">To check</td>
+    <td align="center">Yes</td>
   </tr>
 </table>
 
