@@ -64,7 +64,7 @@ def filter_by_line_id(departures: list[Departure], line_id: str) -> list[Departu
     return [
         departure
         for departure in departures
-        if compare_line_ids(departure.line_id, line_id)
+        if compare_line_ids(departure.line_id, line_id, False)
     ]
 
 
