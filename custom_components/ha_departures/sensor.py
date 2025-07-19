@@ -138,18 +138,16 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
         departures: list[Departure] = []
 
-        _LOGGER.debug(
-            ">> Before line id filtering: %s departures", len(self.coordinator.data)
-        )
+        _LOGGER.debug(">> Before line id filtering: %s departures", len(departures))
         departures = filter_by_line_id(self.coordinator.data, self._line_id)
 
         _LOGGER.debug(
             ">> Before identical departures filtering: %s departures",
-            len(self.coordinator.data),
+            len(departures),
         )
         departures = filter_identical_departures(departures)
 
-        _LOGGER.debug(">> After all filters: %s departures", len(self.coordinator.data))
+        _LOGGER.debug(">> After all filters: %s departures", len(departures))
 
         if not departures:
             _LOGGER.debug(">> No departures found")
