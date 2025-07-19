@@ -50,16 +50,19 @@ def test_create_unique_id_line_instance():
     assert create_unique_id(line) == unique_id
 
 
-def test_filter_by_line_id():
+def test_filter_by_line_id_ignore_year():
     """Test filter_by_line_id function."""
     departures = [
-        Mock(id="123", line_id="line1"),
-        Mock(id="456", line_id="line2"),
-        Mock(id="789", line_id="line1"),
+        Mock(line_id="van:02067: :R:j20"),
+        Mock(line_id="van:02067: :R:j21"),
+        Mock(line_id="van:02067: :R:j24"),
+        Mock(line_id="van:11111: :R:j25"),
     ]
-    filtered_departures = filter_by_line_id(departures, "line1")
-    assert len(filtered_departures) == 2
-    assert all(dep.line_id == "line1" for dep in filtered_departures)
+    filtered_departures = filter_by_line_id(departures, "van:02067: :R:j25")
+    assert len(filtered_departures) == 3
+    assert filtered_departures[0].line_id == "van:02067: :R:j20"
+    assert filtered_departures[1].line_id == "van:02067: :R:j21"
+    assert filtered_departures[2].line_id == "van:02067: :R:j24"
 
 
 def test_filter_identical_departures():

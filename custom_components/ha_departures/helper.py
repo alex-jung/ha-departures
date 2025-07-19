@@ -64,7 +64,7 @@ def filter_by_line_id(departures: list[Departure], line_id: str) -> list[Departu
     return [
         departure
         for departure in departures
-        if compare_line_ids(departure.line_id, line_id)
+        if compare_line_ids(departure.line_id, line_id, False)
     ]
 
 
@@ -109,6 +109,10 @@ def compare_line_ids(line_id1: str, line_id2: str, compare_year: bool = True) ->
 
     (line_id1, _) = line_id1.rsplit(":", 1)
     (line_id2, _) = line_id2.rsplit(":", 1)
+
+    if line_id1 == line_id2:
+        _LOGGER.debug(">> Identical line IDs found (ignoring year): %s", line_id1)
+        return True
 
     return line_id1 == line_id2
 

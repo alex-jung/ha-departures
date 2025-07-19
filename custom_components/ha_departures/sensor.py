@@ -145,11 +145,11 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
         _LOGGER.debug(
             ">> Before identical departures filtering: %s departures",
-            len(self.coordinator.data),
+            len(departures),
         )
         departures = filter_identical_departures(departures)
 
-        _LOGGER.debug(">> After all filters: %s departures", len(self.coordinator.data))
+        _LOGGER.debug(">> After all filters: %s departures", len(departures))
 
         if not departures:
             _LOGGER.debug(">> No departures found")
