@@ -138,7 +138,9 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
         departures: list[Departure] = []
 
-        _LOGGER.debug(">> Before line id filtering: %s departures", len(departures))
+        _LOGGER.debug(
+            ">> Before line id filtering: %s departures", len(self.coordinator.data)
+        )
         departures = filter_by_line_id(self.coordinator.data, self._line_id)
 
         _LOGGER.debug(
