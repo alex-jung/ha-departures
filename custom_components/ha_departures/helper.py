@@ -110,6 +110,8 @@ def compare_line_ids(line_id1: str, line_id2: str, compare_year: bool = True) ->
     (line_id1, _) = line_id1.rsplit(":", 1)
     (line_id2, _) = line_id2.rsplit(":", 1)
 
+    _LOGGER.debug(">> Comparing line IDs: %s and %s", line_id1, line_id2)
+
     return line_id1 == line_id2
 
 
