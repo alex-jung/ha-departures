@@ -45,16 +45,23 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator):
         stop_name: str,
         lines: list[dict],
         hub_name: str,
+        config_entry,
     ) -> None:
         """Initialize."""
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            config_entry=config_entry,
+            update_interval=SCAN_INTERVAL,
+        )
+
         self._url: str = url
         self._stop_id: str = stop_id
         self._stop_name: str = stop_name
         self._hub_name: str = hub_name
         self._lines = [Line.from_dict(x) for x in lines]
         self._data = list[Departure]
-
-        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=SCAN_INTERVAL)
 
     @property
     def stop_name(self):
@@ -119,7 +126,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hub_name: str = entry.data.get(CONF_HUB_NAME)
 
     coordinator = DeparturesDataUpdateCoordinator(
-        hass, url, stop_id, stop_name, lines, hub_name
+        hass, url, stop_id, stop_name, lines, hub_name, entry
     )
 
     await coordinator.async_config_entry_first_refresh()
@@ -163,9 +170,14 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
         # Migrate from minor version 1 to 2
         if config_entry.minor_version < 2:
             new_data.update({CONF_HUB_NAME: config_entry.data.get(CONF_STOP_NAME)})
+        elif config_entry.minor_version < 3:
+            # Migrate from minor version 2 to 3
+            if new_data.get(CONF_API_URL) == "https://efa.vvo-online.de/VMSSL3/":
+                _LOGGER.debug("Migrating VMS URL to new VVO/VMS URL")
+                new_data.update({CONF_API_URL: "https://efa.vvo-online.de/std3/"})
 
         hass.config_entries.async_update_entry(
-            config_entry, data=new_data, minor_version=2, version=1
+            config_entry, data=new_data, minor_version=3, version=1
         )
 
     _LOGGER.debug(

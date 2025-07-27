@@ -68,7 +68,7 @@ EFA_ENDPOINTS: Final = {
     # Rheinland-Pfalz
     "Rolph.de": "https://mandanten.vrn.de/takt2/",
     # Sachsen
-    "Verkehrsverbund Mittelsachsen GmbH (VMS)": "https://efa.vvo-online.de/VMSSL3/",
+    "Der Verkehrsverbund Oberelbe/Mittelsachsen (VVO/VMS)": "https://efa.vvo-online.de/std3/",
     # Niedersachsen
     "Vehrkehrsverbund Region Braunschweig (VRB)": "https://bsvg.efa.de/vrbstd_relaunch/",
 }
