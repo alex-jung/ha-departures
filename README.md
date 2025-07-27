@@ -79,6 +79,10 @@ There is a list of known endpoints (will be updated continuously with each relea
     <td><a href="https://www.westfalenfahrplan.de/nwl-efa/">Der WestfalenTarif</a></td>
     <td align="center">To check</td>
   </tr>
+  <tr>
+    <td><a href="https://www.vrr.de/vrr-efa/">Verkehrsverbund Rhein-Ruhr (VRR)</a></td>
+    <td align="center">Yes</td>
+  </tr>
   <tr><td colspan="2" style="background:#5D8736" align="center"><b>Rheinland-Pfalz</b></td></tr>
   <tr>
     <td><a href="https://mandanten.vrn.de/takt2/">Rolph.de</a></td>

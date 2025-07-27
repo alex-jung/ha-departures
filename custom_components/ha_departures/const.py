@@ -5,7 +5,7 @@ from typing import Final
 NAME = "Public Transport Departures"
 DOMAIN = "ha_departures"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "2.0.5"
+VERSION = "2.0.6"
 
 ISSUE_URL = "https://github.com/alex-jung/ha-departures/issues"
 
@@ -63,6 +63,7 @@ EFA_ENDPOINTS: Final = {
     "Verkehrsgesellschaft Mecklenburg-Vorpommern mbH (VMV)": "https://fahrplanauskunft-mv.de/vmv-efa/",
     # Nordrhein-Westfalen
     "Der WestfalenTarif": "https://www.westfalenfahrplan.de/nwl-efa/",
+    "Verkehrsverbund Rhein-Ruhr (VRR)": "https://www.vrr.de/vrr-efa/",
     "Aachener Verkehrsverbund (AVV)": "https://avv.efa.de/efa/",
     # Rheinland-Pfalz
     "Rolph.de": "https://mandanten.vrn.de/takt2/",
