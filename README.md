@@ -90,7 +90,7 @@ There is a list of known endpoints (will be updated continuously with each relea
   </tr>
   <tr><td colspan="2" style="background:#5D8736" align="center"><b>Sachsen</b></td></tr>
   <tr>
-    <td><a href="https://efa.vvo-online.de/VMSSL3/">Verkehrsverbund Mittelsachsen GmbH (VMS)</a></td>
+    <td><a href="https://efa.vvo-online.de/std3/">Der Verkehrsverbund Oberelbe/Mittelsachsen (VVO/VMS)</a></td>
     <td align="center">Yes</td>
   </tr>
 </table>
