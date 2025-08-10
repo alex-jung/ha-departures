@@ -52,6 +52,7 @@ EFA_ENDPOINTS: Final = {
     "General EFA": "https://www.efa.de/efa/",
     # Baden-Württemberg
     "Freiburger Verkehrs AG (VAG)": "https://efa.vagfr.de/vagfr3/",
+    "Donau-Iller-Nahverkehrsverbund (DING)": "https://www.ding.eu/ding/",
     "Nahverkehrsgesellschaft Baden-Württemberg (nvbw)": "https://www.efa-bw.de/bvb3/",
     "Verkehrsverbund Rhein-Neckar (VRN)": "https://www.vrn.de/mngvrn/",
     "Verkehrs- und Tarifverbund Stuttgart (VVS)": "https://www3.vvs.de/mngvvs/",

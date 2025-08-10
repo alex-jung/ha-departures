@@ -27,13 +27,17 @@ There is a list of known endpoints (will be updated continuously with each relea
     </tr>
   <tr><td colspan="2" style="background:#5D8736" align="center"><b>General</b></td></tr>
   <tr>
-    <td><a href="https://www.efa.de/efa/">General EFA </a></td>
+    <td><a href="https://www.efa.de/efa/">General EFA</a></td>
     <td align="center">No</td>
   </tr>
   <tr><td colspan="2" style="background:#5D8736" align="center"><b>Baden-Württemberg</b></td></tr>
   <tr>
     <td><a href="https://efa.vagfr.de/vagfr3/">Freiburger Verkehrs AG (VAG)</a></td>
     <td align="center">To check</td>
+  </tr>
+  <tr>
+    <td><a href="https://www.ding.eu/ding/">Donau-Iller-Nahverkehrsverbund (DING)</a></td>
+    <td align="center">YES</td>
   </tr>
   <tr>
     <td><a href="https://www.efa-bw.de/bvb3/">Nahverkehrsgesellschaft Baden-Württemberg (nvbw)</a></td>
