@@ -1,32 +1,41 @@
-name: Python package
+name: Style checks and unit tests
 
-on: [push]
+on:
+  - push
+  - pull_request
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.13"]
-
+  style-checks:
+    name: Run ruff style checks
+    runs-on: "ubuntu-latest"
     steps:
-        - uses: actions/checkout@v4
-        - name: Set up Python ${{ matrix.python-version }}
-          uses: actions/setup-python@v5
-          with:
-            python-version: ${{ matrix.python-version }}
-            cache: 'pip'
-        - name: Display Python version
-          run: python -c "import sys; print(sys.version)"
-        - name: Set up Python
-          uses: actions/setup-python@v5
-          with:
-            python-version: '3.x'
-        - name: Install dependencies
-          run: |
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt
-        - name: Test with pytest
-          run: |
-            pytest
+      - uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Lint
+        continue-on-error: ${{ github.base_ref != 'master' }}
+        run: python3 -m ruff check .
+
+  unit-tests:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Test with pytest
+        run: pytest

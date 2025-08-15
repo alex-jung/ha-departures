@@ -1,4 +1,4 @@
-name: Validate
+name: HACS validation
 
 on:
   push:
@@ -11,7 +11,7 @@ jobs:
   validate-hacs:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v4"
+      - uses: "actions/checkout@v5"
       - name: HACS validation
         uses: "hacs/action@main"
         with:
