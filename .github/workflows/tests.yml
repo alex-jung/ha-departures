@@ -21,7 +21,10 @@ jobs:
           pip install -r requirements.txt
       - name: Lint
         continue-on-error: ${{ github.base_ref != 'master' }}
-        run: python3 -m ruff check .
+        run: python3 -m ruff check . --output-file ruff.txt
+      - name: Echo style checks summary
+        run: |
+          cat ruff.txt >> $GITHUB_STEP_SUMMARY
 
   unit-tests:
     name: Run unit tests
