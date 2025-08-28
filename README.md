@@ -12,7 +12,7 @@ This integration provides information about next departures for different public
 ***
 
 ## API Endpoints
-The `Public Transport Departures` integration uses EFA (Elektronische Fahrplanauskunft) endpoints as data source. This endpoints are maintained by different federal states (Bundesländern) and/or municipalities.
+The `Public Transport Departures` integration uses [EFA (Elektronische Fahrplanauskunft)](https://de.wikipedia.org/wiki/Elektronische_Fahrplanauskunft) endpoints as data source. This endpoints are maintained by different federal states (Bundesländern) and/or municipalities.
 
 ### Supported EFA endpoints
 There is a list of known endpoints (will be updated continuously with each release)
@@ -128,32 +128,38 @@ The configuration of integration is made via Home Assistant GUI
 
 #### Step 1 - Choose the [API endpoint](#supported-efa-endpoints) and enter stop name
 
-![image](https://github.com/user-attachments/assets/6341bb9c-58b1-4d94-bfc5-277dea779d37)
+![image](assets/setup-step-1-api.png)
 
 #### Step 2 - Choose stop
 > In this step `ha-departures` integration will search for all locations matching provided stop name.
 > Please select one of them from the list
 
-![image](https://github.com/user-attachments/assets/88ca190f-b6dd-426d-b0ed-62929282645f)
+![image](assets/setup-step-2-stop.png)
 
 #### Step 3 - Choose the connections
 > You will get list of connections provided by the API for selected stop
 > Select all connection(s) you are interesting in and click on `OK`
 
-![image](https://github.com/user-attachments/assets/2e51a94b-ef8a-4422-8e3b-dec921a1a366)
+![image](assets/setup-step-3-routes.png)
 
-As result a new `Hub` has been created incl. new sensor(s) for each connection you selected in previous step:
+#### Step 4 - Define name for new hub
+> Choose a name for your new hub
 
-![image](https://github.com/user-attachments/assets/e3d4de2c-adda-4414-8f8a-d8c52e0bdd38)
+> [!WARNING]
+> No duplicate names are allowed!
+
+After `submit` a new `Hub` will be created incl. new sensor(s) for each connection you selected in previous step:
+
+![image](assets/setup-step-4-hub.png)
 
 ![image](https://github.com/user-attachments/assets/7a54e888-df7f-4098-a644-f93279f043d7)
 
 ### Reconfigure an entry
 You can any time add or remove connections to existing `hub's` (stop locations)
 
-![image](https://github.com/user-attachments/assets/425685e2-743d-45ea-90da-7ef2b31b177e)
+![image](assets/setup-step-reconfig.png)
 
-Just click on `configure` button, select or deselct the connections and click on `OK`, Integration will remove obsolete and add new connections to the Home Assistant.
+Just click on :gear: icon, select or deselct the connections and click on `OK`, Integration will remove obsolete and add new connections to the integration.
 
 ## Usage in dashboard
 
