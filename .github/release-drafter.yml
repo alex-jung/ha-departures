@@ -1,20 +1,35 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
 categories:
   - title: ":boom: Breaking Changes"
     label: "breaking"
   - title: ":rocket: Features"
-    label: "enhancement"
+    labels:
+      - "enhancement"
+      - "feature"
+      - "features"
   - title: ":fire: Removals and Deprecations"
     label: "removal"
   - title: ":beetle: Fixes"
-    label: "bug"
+    labels:
+      - "bug"
+      - "fix"
+      - "bugfix"
   - title: ":racehorse: Performance"
     label: "performance"
   - title: ":rotating_light: Testing"
-    label: "testing"
+    labels:
+      - "testing"
+      - "test"
   - title: ":construction_worker: Continuous Integration"
-    label: "ci"
+    labels:
+      - "ci"
+      - "ci/cd"
   - title: ":books: Documentation"
-    label: "documentation"
+    labels:
+      - "documentation"
+      - "doc"
+      - "docs"
   - title: ":hammer: Refactoring"
     label: "refactoring"
   - title: ":lipstick: Style"

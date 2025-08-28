@@ -1,4 +1,4 @@
-name: Style checks and unit tests
+name: Lint/Unit tests
 
 on:
   - push
@@ -20,8 +20,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Lint
-        continue-on-error: ${{ github.base_ref != 'master' }}
-        run: python3 -m ruff check .
+        continue-on-error: ${{ github.event_name != 'pull_request' }}
+        run: python3 -m ruff check . --output-file ruff.txt
+      - name: Echo style checks summary
+        run: |
+          cat ruff.txt >> $GITHUB_STEP_SUMMARY
 
   unit-tests:
     name: Run unit tests
