@@ -5,6 +5,7 @@ import re
 from datetime import datetime
 
 from apyefa import Departure, Line, TransportType
+from slugify import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,13 +36,17 @@ def line_hash(line: Line) -> str:
     return str(hash(f"{line.id}"))
 
 
-def create_unique_id(line: Line | dict[str, str]) -> str | None:
+def create_unique_id(line: Line | dict[str, str], hub_name: str) -> str | None:
     """Create an unique id for a line."""
     if isinstance(line, dict):
         line = Line.from_dict(line)
 
+    if not hub_name:
+        _LOGGER.warning("Hub name is empty, use 'unknown-hub' instead")
+        hub_name = "unknown-hub"
+
     if isinstance(line, Line):
-        return f"{replace_year_in_id(line.id)}-{line.product}-{line.destination.id}"
+        return f"{slugify(hub_name)}-{replace_year_in_id(line.id)}-{line.product}-{line.destination.id}"
 
     raise ValueError(f"Expected dict or Line object, got {type(line)}")
 
