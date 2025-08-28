@@ -56,7 +56,7 @@ def test_line_hash():
                     "type": "address",
                 },
             },
-            "123-1-456",
+            "test-hub-123-1-456",
         ),
         (
             {
@@ -71,7 +71,7 @@ def test_line_hash():
                     "type": "address",
                 },
             },
-            "van:02067: :R:jxx-2-789",
+            "test-hub-van:02067: :R:jxx-2-789",
         ),  # year replaced with xx
     ],
 )
@@ -83,9 +83,25 @@ def test_create_unique_id_line_instance(line_dict, expected_id):
     line.destination = Mock()
     line.destination.id = "456"
 
-    unique_id = f"{line.id}-bus-456"
-    assert create_unique_id(line) == unique_id
-    assert create_unique_id(line_dict) == expected_id
+    hub_name = "Test Hub"
+
+    unique_id = f"test-hub-{line.id}-bus-456"
+    assert create_unique_id(line, hub_name) == unique_id
+    assert create_unique_id(line_dict, hub_name) == expected_id
+
+
+def test_create_unique_id_line_default_hub_name():
+    """Test create_unique_id function."""
+    line = Mock(Line)
+    line.id = "123"
+    line.product = "bus"
+    line.destination = Mock()
+    line.destination.id = "456"
+
+    hub_name = None
+
+    unique_id = f"unknown-hub-{line.id}-bus-456"
+    assert create_unique_id(line, hub_name) == unique_id
 
 
 def test_create_unique_id_invalid_type():
@@ -93,7 +109,7 @@ def test_create_unique_id_invalid_type():
     with pytest.raises(
         ValueError, match="Expected dict or Line object, got <class 'str'>"
     ):
-        create_unique_id("invalid_type")
+        create_unique_id("invalid_type", "my_hub")
 
 
 def test_filter_by_line_id_no_line_id_provided():

@@ -5,7 +5,7 @@ from typing import Final
 NAME = "Public Transport Departures"
 DOMAIN = "ha_departures"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "2.0.6"
+VERSION = "2.1.0"
 
 ISSUE_URL = "https://github.com/alex-jung/ha-departures/issues"
 
