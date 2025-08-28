@@ -207,16 +207,6 @@ class UnstableDepartureTime:
         """
         return self._estimated_departure_time
 
-    @property
-    def none_counts(self):
-        """Retrieve the count of 'None' values.
-
-        Returns:
-            int: The number of 'None' values tracked by the instance.
-
-        """
-        return self._none_count
-
     def clear(self):
         """Reset the departure times and none counts."""
         self._planned_departure_time = None

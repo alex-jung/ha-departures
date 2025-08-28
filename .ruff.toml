@@ -114,6 +114,8 @@ ignore = [
   "D407",     # Section name underlining
   "E501",     # line too long
 
+  "SLF001", # self-assigning variable {name}
+
   "PLC1901", # {existing} can be simplified to {replacement} as an empty string is falsey; too many false positives
   "PLR0911", # Too many return statements ({returns} > {max_returns})
   "PLR0912", # Too many branches ({branches} > {max_branches})
