@@ -134,7 +134,7 @@ The configuration of integration is made via Home Assistant GUI
 > In this step `ha-departures` integration will search for all locations matching provided stop name.
 > Please select one of them from the list
 
-![image](assets/setup-step-2-stop.png)
+![image](assets/setup-step-2-stop-name.png)
 
 #### Step 3 - Choose the connections
 > You will get list of connections provided by the API for selected stop
@@ -143,10 +143,12 @@ The configuration of integration is made via Home Assistant GUI
 ![image](assets/setup-step-3-routes.png)
 
 #### Step 4 - Define name for new hub
-> Choose a name for your new hub
+Choose a name for your new hub
 
 > [!WARNING]
 > No duplicate names are allowed!
+
+![image](assets/setup-step-4-hub-name.png)
 
 After `submit` a new `Hub` will be created incl. new sensor(s) for each connection you selected in previous step:
 
