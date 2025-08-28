@@ -3,9 +3,11 @@
 from datetime import datetime
 from unittest.mock import Mock
 
-from apyefa import Line, TransportType
+import pytest
+from apyefa import Departure, Line, TransportType
 
 from custom_components.ha_departures.helper import (
+    UnstableDepartureTime,
     compare_line_ids,
     create_unique_id,
     filter_by_line_id,
@@ -38,7 +40,42 @@ def test_line_hash():
     assert line_hash(line) == str(hash("123"))  # Check if the hash matches
 
 
-def test_create_unique_id_line_instance():
+@pytest.mark.parametrize(
+    ("line_dict", "expected_id"),
+    [
+        (
+            {
+                "id": "123",
+                "name": "mock name",
+                "number": "42",
+                "product": {"class": 1},
+                "description": "mock description",
+                "destination": {
+                    "id": "456",
+                    "name": "mock destination",
+                    "type": "address",
+                },
+            },
+            "123-1-456",
+        ),
+        (
+            {
+                "id": "van:02067: :R:j25",
+                "name": "mock name",
+                "number": "25",
+                "product": {"class": 2},
+                "description": "mock description",
+                "destination": {
+                    "id": "789",
+                    "name": "mock destination",
+                    "type": "address",
+                },
+            },
+            "van:02067: :R:jxx-2-789",
+        ),  # year replaced with xx
+    ],
+)
+def test_create_unique_id_line_instance(line_dict, expected_id):
     """Test create_unique_id function."""
     line = Mock(Line)
     line.id = "123"
@@ -48,6 +85,23 @@ def test_create_unique_id_line_instance():
 
     unique_id = f"{line.id}-bus-456"
     assert create_unique_id(line) == unique_id
+    assert create_unique_id(line_dict) == expected_id
+
+
+def test_create_unique_id_invalid_type():
+    """Test create_unique_id function with invalid type."""
+    with pytest.raises(
+        ValueError, match="Expected dict or Line object, got <class 'str'>"
+    ):
+        create_unique_id("invalid_type")
+
+
+def test_filter_by_line_id_no_line_id_provided():
+    """Test filter_by_line_id function with no line_id provided."""
+    departures = [Mock(line_id="line1"), Mock(line_id="line2")]
+    filtered_departures = filter_by_line_id(departures, "")
+
+    assert len(filtered_departures) == 2  # Should return all departures
 
 
 def test_filter_by_line_id_ignore_year():
@@ -152,3 +206,117 @@ def test_get_unique_lines():
     assert len(unique_lines) == 2
     assert unique_lines[0].id == "line1"
     assert unique_lines[1].id == "line2"
+
+
+class TestUnstableDepartureTime:
+    """Test UnstableDepartureTime class."""
+
+    def test_init(self):
+        """Test initialization of UnstableDepartureTime."""
+        udt = UnstableDepartureTime("planned", "estimated")
+        assert udt._attr_planned == "planned"
+        assert udt._attr_estimated == "estimated"
+        assert udt._planned_departure_time is None
+        assert udt._estimated_departure_time is None
+        assert udt._none_count_planned == 0
+
+    def test_get_planned_departure_time(self):
+        """Test get_planned_departure_time method."""
+        udt = UnstableDepartureTime("planned", "estimated")
+        assert udt.planned_time is None
+
+        udt._planned_departure_time = "2023-10-01T12:00:00Z"
+        assert udt.planned_time == "2023-10-01T12:00:00Z"
+
+    def test_get_estimated_departure_time(self):
+        """Test get_planned_departure_time method."""
+        udt = UnstableDepartureTime("planned", "estimated")
+        assert udt.estimated_time is None
+
+        udt._estimated_departure_time = "2023-10-01T12:00:00Z"
+        assert udt.estimated_time == "2023-10-01T12:00:00Z"
+
+    def test_clear(self):
+        """Test get_planned_departure_time method."""
+        udt = UnstableDepartureTime("planned", "estimated")
+        udt._planned_departure_time = "2023-10-01T12:00:00Z"
+        udt._estimated_departure_time = "2023-10-01T12:00:00Z"
+        udt._none_count_planned = 1
+
+        udt.clear()
+
+        assert udt._planned_departure_time is None
+        assert udt._estimated_departure_time is None
+        assert udt._none_count_planned == 0
+
+    def test_to_dict(self):
+        """Test to_dict method."""
+        udt = UnstableDepartureTime("planned", "estimated")
+        udt._planned_departure_time = "2023-10-01T12:00:00Z"
+        udt._estimated_departure_time = "2023-10-01T12:00:00Z"
+        udt._none_count_planned = 1
+
+        result = udt.to_dict()
+        assert result == {
+            "planned": "2023-10-01T12:00:00Z",
+            "estimated": "2023-10-01T12:00:00Z",
+        }
+
+    def test_update_departure_is_none(self):
+        """Test update method."""
+        udt = UnstableDepartureTime("planned", "estimated")
+        udt._planned_departure_time = "2023-10-01T12:00:00Z"
+        udt._estimated_departure_time = "2023-10-01T12:05:00Z"
+        udt._none_count_planned = 1
+
+        udt.update(None)
+
+        assert udt._planned_departure_time is None
+        assert udt._estimated_departure_time is None
+        assert udt._none_count_planned == 0
+
+    def test_update_departure_planned_time_is_not_none(self):
+        """Test update method."""
+        udt = UnstableDepartureTime("planned", "estimated")
+        udt._planned_departure_time = "2023-10-01T12:00:00Z"
+        udt._estimated_departure_time = "2023-10-01T12:05:00Z"
+        udt._none_count_planned = 1
+
+        departure = Mock(spec=Departure)
+        departure.planned_time = "2023-10-01T12:10:00Z"
+        departure.estimated_time = "2023-10-01T12:15:00Z"
+
+        udt.update(departure)
+
+        assert udt._planned_departure_time == "2023-10-01T12:10:00Z"
+        assert udt._estimated_departure_time == "2023-10-01T12:15:00Z"
+        assert udt._none_count_planned == 0
+
+    def test_update_departure_planned_time_is_none_1(self):
+        """Test update method."""
+        udt = UnstableDepartureTime("planned", "estimated")
+        udt._planned_departure_time = "2023-10-01T12:00:00Z"
+        udt._none_count_planned = 1
+
+        departure = Mock(spec=Departure)
+        departure.planned_time = None
+        departure.estimated_time = "2023-10-01T12:15:00Z"
+
+        udt.update(departure)
+
+        assert udt._none_count_planned == 2
+
+    def test_update_departure_planned_time_is_none_2(self):
+        """Test update method."""
+        udt = UnstableDepartureTime("planned", "estimated")
+        udt._planned_departure_time = "2023-10-01T12:00:00Z"
+        udt._none_count_planned = 10
+
+        departure = Mock(spec=Departure)
+        departure.planned_time = None
+        departure.estimated_time = "2023-10-01T12:15:00Z"
+
+        udt.update(departure)
+
+        assert udt._none_count_planned == 0
+        assert udt._planned_departure_time is None

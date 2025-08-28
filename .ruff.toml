@@ -113,7 +113,6 @@ ignore = [
   "D406",     # Section name should end with a newline
   "D407",     # Section name underlining
   "E501",     # line too long
-
   "PLC1901", # {existing} can be simplified to {replacement} as an empty string is falsey; too many false positives
   "PLR0911", # Too many return statements ({returns} > {max_returns})
   "PLR0912", # Too many branches ({branches} > {max_branches})
@@ -131,6 +130,8 @@ ignore = [
   "SIM103",  # Return the condition {condition} directly
   "SIM108",  # Use ternary operator {contents} instead of if-else-block
   "SIM115",  # Use context handler for opening files
+
+  "SLF001", # Access to private attribute {name} in class {cls}
 
   # Moving imports into type-checking blocks can mess with pytest.patch()
   "TC001", # Move application import {} into a type-checking block
