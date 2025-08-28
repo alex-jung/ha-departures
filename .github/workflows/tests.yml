@@ -1,4 +1,4 @@
-name: Style checks and unit tests
+name: Lint/Unit tests
 
 on:
   - push
