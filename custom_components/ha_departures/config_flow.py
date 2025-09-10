@@ -27,6 +27,7 @@ from .const import (
     CONF_ERROR_NO_STOP_FOUND,
     CONF_HUB_NAME,
     CONF_LINES,
+    CONF_STOP_COORD,
     CONF_STOP_ID,
     CONF_STOP_NAME,
     DOMAIN,
@@ -42,7 +43,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for ha_departures."""
 
     VERSION = 1
-    MINOR_VERSION = 3
+    MINOR_VERSION = 4
 
     def __init__(self) -> None:
         """Initialize."""
@@ -203,6 +204,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_API_URL: self._url,
                 CONF_STOP_ID: self._stop.id,
                 CONF_STOP_NAME: self._stop.name,
+                CONF_STOP_COORD: self._stop.coord,
                 CONF_LINES: [x.to_dict() for x in connections],
             }
 

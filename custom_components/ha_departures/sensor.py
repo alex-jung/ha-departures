@@ -6,6 +6,7 @@ from datetime import datetime
 from apyefa import Departure, Line, TransportType
 from homeassistant import config_entries, core
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.const import ATTR_LATITUDE, ATTR_LONGITUDE
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import DeparturesDataUpdateCoordinator
@@ -97,6 +98,12 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             ATTR_DIRECTION: line.destination.name,
             ATTR_PROVIDER_URL: coordinator.api_url,
             ATTR_PLANNED_DEPARTURE_TIME: None,
+            ATTR_LATITUDE: coordinator.stop_coord[0]
+            if coordinator.stop_coord
+            else None,
+            ATTR_LONGITUDE: coordinator.stop_coord[1]
+            if coordinator.stop_coord
+            else None,
         }
 
         _LOGGER.debug('ha-departures sensor "%s" created', self.unique_id)
