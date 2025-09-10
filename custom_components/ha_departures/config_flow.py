@@ -378,7 +378,7 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
             # remove connection(s)
             for line_id in removed_connections:
-                uid = create_unique_id(line_id)
+                uid = create_unique_id(line_id, self._hub_name)
 
                 _LOGGER.debug('Remove connection "%s"', uid)
 
@@ -391,7 +391,7 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
                 updated_config = list(
                     filter(
-                        lambda x: create_unique_id(x) != uid,
+                        lambda x: create_unique_id(x, self._hub_name) != uid,
                         updated_config,
                     )
                 )
