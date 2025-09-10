@@ -5,7 +5,7 @@ from typing import Final
 NAME = "Public Transport Departures"
 DOMAIN = "ha_departures"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "2.1.1"
+VERSION = "2.2.0"
 
 ISSUE_URL = "https://github.com/alex-jung/ha-departures/issues"
 
@@ -16,6 +16,7 @@ PLATFORMS = [SENSOR]
 # Configuration and options
 CONF_STOP_NAME = "stop_name"
 CONF_STOP_ID = "stop_id"
+CONF_STOP_COORD = "stop_coord"
 CONF_API_URL = "api_url"
 CONF_ENDPOINT = "endpoint"
 CONF_LINES = "lines"

@@ -21,6 +21,7 @@ from .const import (
     CONF_API_URL,
     CONF_HUB_NAME,
     CONF_LINES,
+    CONF_STOP_COORD,
     CONF_STOP_ID,
     CONF_STOP_NAME,
     DOMAIN,
@@ -43,6 +44,7 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator):
         url: str,
         stop_id: str,
         stop_name: str,
+        stop_coord: tuple,
         lines: list[dict],
         hub_name: str,
         config_entry,
@@ -59,6 +61,7 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator):
         self._url: str = url
         self._stop_id: str = stop_id
         self._stop_name: str = stop_name
+        self._stop_coord: tuple = stop_coord
         self._hub_name: str = hub_name
         self._lines = [Line.from_dict(x) for x in lines]
         self._data = list[Departure]
@@ -72,6 +75,11 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator):
     def stop_id(self):
         """Return config entry stop ID."""
         return self._stop_id
+
+    @property
+    def stop_coord(self):
+        """Return config entry stop coordinates."""
+        return self._stop_coord
 
     @property
     def hub_name(self):
@@ -122,11 +130,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     url: str = entry.data.get(CONF_API_URL)
     stop_id: str = entry.data.get(CONF_STOP_ID)
     stop_name: str = entry.data.get(CONF_STOP_NAME)
+    stop_coord: tuple = entry.data.get(CONF_STOP_COORD)
     lines: list[dict] = entry.data.get(CONF_LINES)
     hub_name: str = entry.data.get(CONF_HUB_NAME)
 
     coordinator = DeparturesDataUpdateCoordinator(
-        hass, url, stop_id, stop_name, lines, hub_name, entry
+        hass, url, stop_id, stop_name, stop_coord, lines, hub_name, entry
     )
 
     await coordinator.async_config_entry_first_refresh()
@@ -175,6 +184,34 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
             if new_data.get(CONF_API_URL) == "https://efa.vvo-online.de/VMSSL3/":
                 _LOGGER.debug("Migrating VMS URL to new VVO/VMS URL")
                 new_data.update({CONF_API_URL: "https://efa.vvo-online.de/std3/"})
+        elif config_entry.minor_version < 4:
+            # Migrate from minor version 3 to 4
+            if not new_data.get(CONF_STOP_COORD):
+                _LOGGER.debug(
+                    "Migrating stop coordinates: No coordinates set, trying to fetch them from EFA client"
+                )
+                api = new_data.get(CONF_API_URL)
+                stop_id = new_data.get(CONF_STOP_ID)
+
+                async with EfaClient(api) as client:
+                    try:
+                        stops = await client.locations_by_name(stop_id)
+
+                        if stops and len(stops) == 1 and stops[0].coord:
+                            new_data.update({CONF_STOP_COORD: stops[0].coord})
+                            _LOGGER.debug(
+                                "Migrating stop coordinates: Found coordinates %s",
+                                stops[0].coord,
+                            )
+                        else:
+                            _LOGGER.error(
+                                "Migrating stop coordinates: No coordinates found or multiple stops found"
+                            )
+                    except (EfaConnectionError, EfaResponseInvalid) as err:
+                        _LOGGER.error(
+                            "Migrating stop coordinates: Connection to EFA client failed"
+                        )
+                        _LOGGER.debug("Error: %s", err)
 
         hass.config_entries.async_update_entry(
             config_entry, data=new_data, minor_version=3, version=1
