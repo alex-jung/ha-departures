@@ -35,16 +35,10 @@ ATTR_DIRECTION: Final = "direction"
 ATTR_DIRECTION_TEXT: Final = "direction_text"
 ATTR_DEPARTURES: Final = "departures"
 ATTR_PROVIDER_URL: Final = "data_provider"
-ATTR_PLANNED_DEPARTURE_TIME: Final = "planned_departure_time"
-ATTR_PLANNED_DEPARTURE_TIME_1: Final = "planned_departure_time_1"
-ATTR_PLANNED_DEPARTURE_TIME_2: Final = "planned_departure_time_2"
-ATTR_PLANNED_DEPARTURE_TIME_3: Final = "planned_departure_time_3"
-ATTR_PLANNED_DEPARTURE_TIME_4: Final = "planned_departure_time_4"
-ATTR_ESTIMATED_DEPARTURE_TIME: Final = "estimated_departure_time"
-ATTR_ESTIMATED_DEPARTURE_TIME_1: Final = "estimated_departure_time_1"
-ATTR_ESTIMATED_DEPARTURE_TIME_2: Final = "estimated_departure_time_2"
-ATTR_ESTIMATED_DEPARTURE_TIME_3: Final = "estimated_departure_time_3"
-ATTR_ESTIMATED_DEPARTURE_TIME_4: Final = "estimated_departure_time_4"
+ATTR_TIMES: Final = "times"
+
+ATTR_PLANNED_DEPARTURE_TIME: Final = "planned"
+ATTR_ESTIMATED_DEPARTURE_TIME: Final = "estimated"
 
 
 # Endpoints

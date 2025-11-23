@@ -178,18 +178,15 @@ class UnstableDepartureTime:
 
     MAX_NONE_VALUES = 2
 
-    def __init__(self, attr_planned: str, attr_estimated: str) -> None:
+    def __init__(self, departure: Departure) -> None:
         """Initialize the helper class with planned and estimated attributes.
 
         Args:
-            attr_planned (str): The attribute name for the planned departure time.
-            attr_estimated (str): The attribute name for the estimated departure time.
+            departure (Departure): The departure object containing planned and estimated times.
 
         """
-        self._attr_planned = attr_planned
-        self._attr_estimated = attr_estimated
-        self._planned_departure_time = None
-        self._estimated_departure_time = None
+        self._planned_departure_time = departure.planned_time
+        self._estimated_departure_time = departure.estimated_time
         self._none_count_planned = 0
 
     @property
@@ -259,17 +256,3 @@ class UnstableDepartureTime:
             self._none_count_planned = 0
 
         self._estimated_departure_time = departure.estimated_time
-
-    def to_dict(self):
-        """Convert the departure information into a dictionary representation.
-
-        Returns:
-            dict: A dictionary containing the planned and estimated departure times,
-                  where the keys are defined by `_attr_planned` and `_attr_estimated`,
-                  and the values are `_planned_departure_time` and `_estimated_departure_time`, respectively.
-
-        """
-        return {
-            self._attr_planned: self._planned_departure_time,
-            self._attr_estimated: self._estimated_departure_time,
-        }

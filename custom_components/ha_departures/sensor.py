@@ -13,18 +13,11 @@ from . import DeparturesDataUpdateCoordinator
 from .const import (
     ATTR_DIRECTION,
     ATTR_ESTIMATED_DEPARTURE_TIME,
-    ATTR_ESTIMATED_DEPARTURE_TIME_1,
-    ATTR_ESTIMATED_DEPARTURE_TIME_2,
-    ATTR_ESTIMATED_DEPARTURE_TIME_3,
-    ATTR_ESTIMATED_DEPARTURE_TIME_4,
     ATTR_LINE_ID,
     ATTR_LINE_NAME,
     ATTR_PLANNED_DEPARTURE_TIME,
-    ATTR_PLANNED_DEPARTURE_TIME_1,
-    ATTR_PLANNED_DEPARTURE_TIME_2,
-    ATTR_PLANNED_DEPARTURE_TIME_3,
-    ATTR_PLANNED_DEPARTURE_TIME_4,
     ATTR_PROVIDER_URL,
+    ATTR_TIMES,
     ATTR_TRANSPORT_TYPE,
 )
 from .helper import (
@@ -68,23 +61,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         self._line_id = line.id
         self._destination = line.destination
         self._value = None
-        self._times = [
-            UnstableDepartureTime(
-                ATTR_PLANNED_DEPARTURE_TIME, ATTR_ESTIMATED_DEPARTURE_TIME
-            ),
-            UnstableDepartureTime(
-                ATTR_PLANNED_DEPARTURE_TIME_1, ATTR_ESTIMATED_DEPARTURE_TIME_1
-            ),
-            UnstableDepartureTime(
-                ATTR_PLANNED_DEPARTURE_TIME_2, ATTR_ESTIMATED_DEPARTURE_TIME_2
-            ),
-            UnstableDepartureTime(
-                ATTR_PLANNED_DEPARTURE_TIME_3, ATTR_ESTIMATED_DEPARTURE_TIME_3
-            ),
-            UnstableDepartureTime(
-                ATTR_PLANNED_DEPARTURE_TIME_4, ATTR_ESTIMATED_DEPARTURE_TIME_4
-            ),
-        ]
+        self._times = []
 
         self._attr_name = (
             f"{coordinator.stop_name}-{self._line}-{self._destination.name}"
@@ -97,13 +74,13 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             ATTR_TRANSPORT_TYPE: self._transport.name,
             ATTR_DIRECTION: line.destination.name,
             ATTR_PROVIDER_URL: coordinator.api_url,
-            ATTR_PLANNED_DEPARTURE_TIME: None,
             ATTR_LATITUDE: coordinator.stop_coord[0]
             if coordinator.stop_coord
             else None,
             ATTR_LONGITUDE: coordinator.stop_coord[1]
             if coordinator.stop_coord
             else None,
+            ATTR_TIMES: [],
         }
 
         _LOGGER.debug('ha-departures sensor "%s" created', self.unique_id)
@@ -156,13 +133,13 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         )
         departures = filter_identical_departures(departures)
 
-        _LOGGER.debug(">> After all filters: %s departures", len(departures))
-
         if not departures:
             _LOGGER.debug(">> No departures found")
             self.clear_times()
 
             return
+
+        _LOGGER.debug(">> After all filters: %s departures", len(departures))
 
         self._update_times(departures)
 
@@ -179,35 +156,50 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
         self._attr_extra_state_attributes.update(
             {
-                ATTR_PLANNED_DEPARTURE_TIME: None,
-                ATTR_ESTIMATED_DEPARTURE_TIME: None,
-                ATTR_PLANNED_DEPARTURE_TIME_1: None,
-                ATTR_ESTIMATED_DEPARTURE_TIME_1: None,
-                ATTR_PLANNED_DEPARTURE_TIME_2: None,
-                ATTR_ESTIMATED_DEPARTURE_TIME_2: None,
-                ATTR_PLANNED_DEPARTURE_TIME_3: None,
-                ATTR_ESTIMATED_DEPARTURE_TIME_3: None,
-                ATTR_PLANNED_DEPARTURE_TIME_4: None,
-                ATTR_ESTIMATED_DEPARTURE_TIME_4: None,
+                ATTR_TIMES: [],
             }
         )
 
     def _update_times(self, departures: list[Departure]):
-        for i in range(5):
-            planned_time = departures[i].planned_time if i < len(departures) else None
-            estimated_time = (
-                departures[i].estimated_time if i < len(departures) else None
-            )
+        for index, departure in enumerate(departures):
+            planned_time = departure.planned_time
+            estimated_time = departure.estimated_time
 
             _LOGGER.debug(
                 ">> [%s]: %s -> %s",
-                i,
+                index,
                 planned_time,
                 estimated_time,
             )
 
-            self._times[i].update(departures[i] if i < len(departures) else None)
-            self._attr_extra_state_attributes.update(self._times[i].to_dict())
+            if index < len(self._times):
+                self._times[index].update(departure)
+            else:
+                self._times.append(UnstableDepartureTime(departure))
+
+        min_length = min(len(departures), len(self._times))
+
+        # Trim the list to the minimum length
+        self._times = self._times[:min_length]
+
+        for t in self._times:
+            _LOGGER.debug(
+                ">> Time entry: planned=%s, estimated=%s",
+                t.planned_time,
+                t.estimated_time,
+            )
+
+        self._attr_extra_state_attributes.update(
+            {
+                ATTR_TIMES: [
+                    {
+                        ATTR_PLANNED_DEPARTURE_TIME: time.planned_time,
+                        ATTR_ESTIMATED_DEPARTURE_TIME: time.estimated_time,
+                    }
+                    for time in self._times
+                ],
+            }
+        )
 
     def _calculate_datetime(self, departure: Departure) -> datetime | None:
         if not departure or not isinstance(departure, Departure):
