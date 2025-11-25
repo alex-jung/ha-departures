@@ -98,12 +98,12 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             ATTR_DIRECTION: line.destination.name,
             ATTR_PROVIDER_URL: coordinator.api_url,
             ATTR_PLANNED_DEPARTURE_TIME: None,
-            ATTR_LATITUDE: coordinator.stop_coord[0]
-            if coordinator.stop_coord
-            else None,
-            ATTR_LONGITUDE: coordinator.stop_coord[1]
-            if coordinator.stop_coord
-            else None,
+            ATTR_LATITUDE: (
+                coordinator.stop_coord[0] if coordinator.stop_coord else None
+            ),
+            ATTR_LONGITUDE: (
+                coordinator.stop_coord[1] if coordinator.stop_coord else None
+            ),
         }
 
         _LOGGER.debug('ha-departures sensor "%s" created', self.unique_id)
@@ -172,8 +172,8 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
     def clear_times(self):
         """Clear all times."""
-        for i in range(5):
-            self._times[i].clear()
+        for t in self._times:
+            t.clear()
 
         self._value = None
 
@@ -193,7 +193,7 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         )
 
     def _update_times(self, departures: list[Departure]):
-        for i in range(5):
+        for i, time in enumerate(self._times):
             planned_time = departures[i].planned_time if i < len(departures) else None
             estimated_time = (
                 departures[i].estimated_time if i < len(departures) else None
@@ -206,8 +206,8 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
                 estimated_time,
             )
 
-            self._times[i].update(departures[i] if i < len(departures) else None)
-            self._attr_extra_state_attributes.update(self._times[i].to_dict())
+            time.update(departures[i] if i < len(departures) else None)
+            self._attr_extra_state_attributes.update(time.to_dict())
 
     def _calculate_datetime(self, departure: Departure) -> datetime | None:
         if not departure or not isinstance(departure, Departure):
