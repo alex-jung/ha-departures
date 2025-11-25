@@ -2,6 +2,7 @@
 
 import logging
 from copy import deepcopy
+from typing import Any
 
 import homeassistant.helpers.config_validation as cv
 import homeassistant.helpers.entity_registry as er
@@ -51,7 +52,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._all_stops: list[Location] = []
         self._stop: Location | None = None
         self._lines: list[Line] = []
-        self._data: dict[str, str] = {}
+        self._data: dict[str, Any] = {}
 
         _LOGGER.debug(" Start CONFIGURATION flow ".center(60, "="))
         _LOGGER.debug(">> ha-departures version: %s", VERSION)
@@ -200,6 +201,8 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     line.destination.id,
                 )
 
+            assert self._stop is not None
+
             self._data = {
                 CONF_API_URL: self._url,
                 CONF_STOP_ID: self._stop.id,
@@ -213,9 +216,13 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         # load all lines for choosen stop location
         self._lines = []
 
+        assert self._stop is not None
+
         async with EfaClient(self._url) as client:
             self._lines = await client.lines_by_location(
-                self._stop.id, req_types=[LineRequestType.DEPARTURE_MONITOR]
+                self._stop.id,
+                req_types=[LineRequestType.DEPARTURE_MONITOR],
+                show_trains_explicit=True,
             )
 
         self._lines = get_unique_lines(self._lines)
@@ -261,6 +268,8 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         _LOGGER.debug(' Start "step_hubname" '.center(60, "-"))
         _LOGGER.debug(">> user input: %s", user_input)
+
+        assert self._stop is not None
 
         if user_input is not None:
             await self.async_set_unique_id(
@@ -310,10 +319,10 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
             Line.from_dict(x) for x in config_entry.data.get(CONF_LINES, [])
         ]
         self._connections: list[Line] = []
-        self._stop_name: str = config_entry.data.get(CONF_STOP_NAME)
-        self._stop_id: str = config_entry.data.get(CONF_STOP_ID)
-        self._url: str = config_entry.data.get(CONF_API_URL)
-        self._hub_name: str = config_entry.data.get(CONF_HUB_NAME)
+        self._stop_name: str = config_entry.data.get(CONF_STOP_NAME)  # type: ignore  # noqa: PGH003
+        self._stop_id: str = config_entry.data.get(CONF_STOP_ID)  # type: ignore  # noqa: PGH003
+        self._url: str = config_entry.data.get(CONF_API_URL)  # type: ignore  # noqa: PGH003
+        self._hub_name: str = config_entry.data.get(CONF_HUB_NAME)  # type: ignore  # noqa: PGH003
 
         _LOGGER.debug("Start configuration")
 
@@ -382,6 +391,10 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
             for line_id in removed_connections:
                 uid = create_unique_id(line_id, self._hub_name)
 
+                if not uid:
+                    _LOGGER.error('Failed to create unique id for line "%s"', line_id)
+                    continue
+
                 _LOGGER.debug('Remove connection "%s"', uid)
 
                 entity_to_remove = connections_map.get(uid)
@@ -416,7 +429,9 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
         async with EfaClient(self._url) as client:
             self._connections = await client.lines_by_location(
-                self._stop_id, req_types=[LineRequestType.DEPARTURE_MONITOR]
+                self._stop_id,
+                req_types=[LineRequestType.DEPARTURE_MONITOR],
+                show_trains_explicit=True,
             )
 
         line_list: list[SelectOptionDict] = [
