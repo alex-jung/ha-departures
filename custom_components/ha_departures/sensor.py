@@ -149,8 +149,8 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
 
     def clear_times(self):
         """Clear all times."""
-        for i in range(5):
-            self._times[i].clear()
+        for time in self._times:
+            time.clear()
 
         self._value = None
 

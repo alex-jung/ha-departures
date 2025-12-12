@@ -32,8 +32,6 @@ ATTR_LINE_ID: Final = "line_id"
 ATTR_STOP_ID: Final = "stop_id"
 ATTR_TRANSPORT_TYPE: Final = "transport"
 ATTR_DIRECTION: Final = "direction"
-ATTR_DIRECTION_TEXT: Final = "direction_text"
-ATTR_DEPARTURES: Final = "departures"
 ATTR_PROVIDER_URL: Final = "data_provider"
 ATTR_TIMES: Final = "times"
 
