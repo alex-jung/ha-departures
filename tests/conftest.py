@@ -2,7 +2,14 @@
 
 from unittest.mock import MagicMock, Mock
 
+import pytest
 from apyefa import Line, Location, TransportType
+
+
+@pytest.fixture(autouse=True)
+def enable_custom_integrations(enable_custom_integrations):
+    """Enable custom integrations."""
+    return enable_custom_integrations
 
 
 def create_mock_coordinator(data=None):
