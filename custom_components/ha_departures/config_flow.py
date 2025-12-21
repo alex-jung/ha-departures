@@ -134,12 +134,9 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._stop = next(
-                filter(lambda x: x.id == user_input[CONF_STOP_NAME], self._all_stops)
+                (x for x in self._all_stops if x.id == user_input[CONF_STOP_NAME]),
+                None,
             )
-
-            if not self._stop:
-                _LOGGER.error("No stop found")
-                return self.async_abort(reason="No stop found")
 
             _LOGGER.debug(
                 "Selected stop: %s(%s)",

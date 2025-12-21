@@ -1,44 +1,44 @@
 name: Lint/Unit tests
 
 on:
-  - push
-  - pull_request
+    - push
+    - pull_request
 
 jobs:
-  style-checks:
-    name: Run ruff style checks
-    runs-on: "ubuntu-latest"
-    steps:
-      - uses: actions/checkout@v5
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-          cache: "pip"
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Lint
-        continue-on-error: ${{ github.event_name != 'pull_request' }}
-        run: python3 -m ruff check . --output-file ruff.txt
-      - name: Echo style checks summary
-        run: |
-          cat ruff.txt >> $GITHUB_STEP_SUMMARY
+    style-checks:
+        name: Run ruff style checks
+        runs-on: "ubuntu-latest"
+        steps:
+            - uses: actions/checkout@v5
+            - name: Set up Python
+              uses: actions/setup-python@v6
+              with:
+                  python-version: "3.13.2"
+                  cache: "pip"
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install -r requirements.txt
+            - name: Lint
+              continue-on-error: ${{ github.event_name != 'pull_request' }}
+              run: python3 -m ruff check . --output-file ruff.txt
+            - name: Echo style checks summary
+              run: |
+                  cat ruff.txt >> $GITHUB_STEP_SUMMARY
 
-  unit-tests:
-    name: Run unit tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.13"
-          cache: "pip"
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Test with pytest
-        run: pytest
+    unit-tests:
+        name: Run unit tests
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+            - name: Set up Python
+              uses: actions/setup-python@v6
+              with:
+                  python-version: "3.13.2"
+                  cache: "pip"
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install -r requirements.txt
+            - name: Test with pytest
+              run: pytest

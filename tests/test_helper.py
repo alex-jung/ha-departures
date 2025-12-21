@@ -19,6 +19,15 @@ from custom_components.ha_departures.helper import (
 )
 
 
+def get_mock_departure(planned, estimated, line_id="line1"):
+    """Create a mock Departure object."""
+    departure = Mock(spec=Departure)
+    departure.planned_time = planned
+    departure.estimated_time = estimated
+    departure.line_id = line_id
+    return departure
+
+
 def test_transport_to_str():
     """Test transport_to_str function."""
     assert transport_to_str(TransportType.CITY_BUS) == "Bus"
@@ -229,110 +238,119 @@ class TestUnstableDepartureTime:
 
     def test_init(self):
         """Test initialization of UnstableDepartureTime."""
-        udt = UnstableDepartureTime("planned", "estimated")
-        assert udt._attr_planned == "planned"
-        assert udt._attr_estimated == "estimated"
-        assert udt._planned_departure_time is None
-        assert udt._estimated_departure_time is None
-        assert udt._none_count_planned == 0
+        departure = get_mock_departure("planned", "estimated")
+
+        udt = UnstableDepartureTime(departure)
+        assert udt.planned_time == "planned"
+        assert udt.estimated_time == "estimated"
+        assert udt.none_count_planned == 0
 
     def test_get_planned_departure_time(self):
         """Test get_planned_departure_time method."""
-        udt = UnstableDepartureTime("planned", "estimated")
-        assert udt.planned_time is None
+        planned = datetime.now()
 
-        udt._planned_departure_time = "2023-10-01T12:00:00Z"
-        assert udt.planned_time == "2023-10-01T12:00:00Z"
+        departure = get_mock_departure(planned, "estimated")
+
+        udt = UnstableDepartureTime(departure)
+        assert udt.planned_time == planned
 
     def test_get_estimated_departure_time(self):
         """Test get_planned_departure_time method."""
-        udt = UnstableDepartureTime("planned", "estimated")
-        assert udt.estimated_time is None
+        planned = datetime(2025, 5, 17, 15, 30)
+        estimated = datetime(2025, 5, 17, 15, 45)
 
-        udt._estimated_departure_time = "2023-10-01T12:00:00Z"
-        assert udt.estimated_time == "2023-10-01T12:00:00Z"
+        departure = get_mock_departure(planned, estimated)
+
+        udt = UnstableDepartureTime(departure)
+        assert udt.estimated_time == estimated
 
     def test_clear(self):
         """Test get_planned_departure_time method."""
-        udt = UnstableDepartureTime("planned", "estimated")
-        udt._planned_departure_time = "2023-10-01T12:00:00Z"
-        udt._estimated_departure_time = "2023-10-01T12:00:00Z"
-        udt._none_count_planned = 1
+        planned = datetime(2025, 5, 17, 15, 30)
+        estimated = datetime(2025, 5, 17, 15, 45)
+
+        departure = get_mock_departure(planned, estimated)
+
+        udt = UnstableDepartureTime(departure)
 
         udt.clear()
 
-        assert udt._planned_departure_time is None
-        assert udt._estimated_departure_time is None
-        assert udt._none_count_planned == 0
-
-    def test_to_dict(self):
-        """Test to_dict method."""
-        udt = UnstableDepartureTime("planned", "estimated")
-        udt._planned_departure_time = "2023-10-01T12:00:00Z"
-        udt._estimated_departure_time = "2023-10-01T12:00:00Z"
-        udt._none_count_planned = 1
-
-        result = udt.to_dict()
-        assert result == {
-            "planned": "2023-10-01T12:00:00Z",
-            "estimated": "2023-10-01T12:00:00Z",
-        }
+        assert udt.planned_time is None
+        assert udt.estimated_time is None
+        assert udt.none_count_planned == 0
 
     def test_update_departure_is_none(self):
         """Test update method."""
-        udt = UnstableDepartureTime("planned", "estimated")
-        udt._planned_departure_time = "2023-10-01T12:00:00Z"
-        udt._estimated_departure_time = "2023-10-01T12:05:00Z"
+        planned = datetime(2025, 5, 17, 15, 30)
+        estimated = datetime(2025, 5, 17, 15, 45)
+
+        departure = get_mock_departure(planned, estimated)
+
+        udt = UnstableDepartureTime(departure)
         udt._none_count_planned = 1
 
         udt.update(None)
 
-        assert udt._planned_departure_time is None
-        assert udt._estimated_departure_time is None
-        assert udt._none_count_planned == 0
+        assert udt.planned_time is None
+        assert udt.estimated_time is None
+        assert udt.none_count_planned == 0
 
     def test_update_departure_planned_time_is_not_none(self):
         """Test update method."""
-        udt = UnstableDepartureTime("planned", "estimated")
-        udt._planned_departure_time = "2023-10-01T12:00:00Z"
-        udt._estimated_departure_time = "2023-10-01T12:05:00Z"
+        planned_1 = datetime(2025, 5, 17, 15, 30)
+        estimated_1 = datetime(2025, 5, 17, 15, 45)
+
+        departure_1 = get_mock_departure(planned_1, estimated_1)
+
+        udt = UnstableDepartureTime(departure_1)
         udt._none_count_planned = 1
 
-        departure = Mock(spec=Departure)
-        departure.planned_time = "2023-10-01T12:10:00Z"
-        departure.estimated_time = "2023-10-01T12:15:00Z"
+        planned_2 = datetime(2025, 5, 17, 15, 31)
+        estimated_2 = datetime(2025, 5, 17, 15, 46)
 
-        udt.update(departure)
+        departure_2 = get_mock_departure(planned_2, estimated_2)
 
-        assert udt._planned_departure_time == "2023-10-01T12:10:00Z"
-        assert udt._estimated_departure_time == "2023-10-01T12:15:00Z"
-        assert udt._none_count_planned == 0
+        udt.update(departure_2)
+
+        assert udt.planned_time == planned_2
+        assert udt.estimated_time == estimated_2
+        assert udt.none_count_planned == 0
 
     def test_update_departure_planned_time_is_none_1(self):
         """Test update method."""
-        udt = UnstableDepartureTime("planned", "estimated")
-        udt._planned_departure_time = "2023-10-01T12:00:00Z"
+        planned_1 = datetime(2025, 5, 17, 15, 30)
+        estimated_1 = datetime(2025, 5, 17, 15, 45)
+
+        departure_1 = get_mock_departure(planned_1, estimated_1)
+
+        udt = UnstableDepartureTime(departure_1)
         udt._none_count_planned = 1
 
-        departure = Mock(spec=Departure)
-        departure.planned_time = None
-        departure.estimated_time = "2023-10-01T12:15:00Z"
+        planned_2 = None
+        estimated_2 = datetime(2025, 5, 17, 15, 46)
 
-        udt.update(departure)
+        departure_2 = get_mock_departure(planned_2, estimated_2)
 
-        assert udt._none_count_planned == 2
+        udt.update(departure_2)
+
+        assert udt.none_count_planned == 2
 
     def test_update_departure_planned_time_is_none_2(self):
         """Test update method."""
-        udt = UnstableDepartureTime("planned", "estimated")
-        udt._planned_departure_time = "2023-10-01T12:00:00Z"
+        planned_1 = datetime(2025, 5, 17, 15, 30)
+        estimated_1 = datetime(2025, 5, 17, 15, 45)
+
+        departure_1 = get_mock_departure(planned_1, estimated_1)
+
+        udt = UnstableDepartureTime(departure_1)
         udt._none_count_planned = 10
 
-        departure = Mock(spec=Departure)
-        departure.planned_time = None
-        departure.estimated_time = "2023-10-01T12:15:00Z"
+        planned_2 = None
+        estimated_2 = datetime(2025, 5, 17, 15, 46)
 
-        udt.update(departure)
+        departure_2 = get_mock_departure(planned_2, estimated_2)
 
-        assert udt._none_count_planned == 0
-        assert udt._planned_departure_time is None
+        udt.update(departure_2)
+
+        assert udt.none_count_planned == 0
+        assert udt.planned_time is None

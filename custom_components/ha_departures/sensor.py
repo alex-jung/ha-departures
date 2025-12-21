@@ -74,12 +74,12 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
             ATTR_TRANSPORT_TYPE: self._transport.name,
             ATTR_DIRECTION: line.destination.name,
             ATTR_PROVIDER_URL: coordinator.api_url,
-            ATTR_LATITUDE: coordinator.stop_coord[0]
-            if coordinator.stop_coord
-            else None,
-            ATTR_LONGITUDE: coordinator.stop_coord[1]
-            if coordinator.stop_coord
-            else None,
+            ATTR_LATITUDE: (
+                coordinator.stop_coord[0] if coordinator.stop_coord else None
+            ),
+            ATTR_LONGITUDE: (
+                coordinator.stop_coord[1] if coordinator.stop_coord else None
+            ),
             ATTR_TIMES: [],
         }
 
@@ -202,6 +202,20 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
         )
 
     def _calculate_datetime(self, departure: Departure) -> datetime | None:
+        """Calculate the effective departure datetime.
+
+        Determines the departure time to use by prioritizing the estimated time
+        over the planned time if available.
+
+        Args:
+            departure: A Departure object containing time information.
+
+        Returns:
+            datetime | None: The estimated departure time if available,
+                             otherwise the planned departure time.
+                             Returns None if departure is None or not a Departure instance.
+
+        """
         if not departure or not isinstance(departure, Departure):
             return None
 

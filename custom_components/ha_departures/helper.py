@@ -209,6 +209,16 @@ class UnstableDepartureTime:
         """
         return self._estimated_departure_time
 
+    @property
+    def none_count_planned(self):
+        """Retrieve the count of consecutive None values for planned time.
+
+        Returns:
+            int: The count of consecutive None values for planned time.
+
+        """
+        return self._none_count_planned
+
     def clear(self):
         """Reset the departure times and none counts."""
         self._planned_departure_time = None
@@ -241,9 +251,7 @@ class UnstableDepartureTime:
         """
         if departure is None:
             # If the departure is None, reset the times and none counts
-            self._planned_departure_time = None
-            self._estimated_departure_time = None
-            self._none_count_planned = 0
+            self.clear()
             return
 
         if departure.planned_time is not None:

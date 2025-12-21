@@ -1,14 +1,14 @@
 name: Draft a release note
 on:
-  push:
-    branches:
-      - master
+    push:
+        branches:
+            - master
 jobs:
-  draft_release:
-    name: Release Drafter
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run release-drafter
-        uses: release-drafter/release-drafter@v6.1.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.API_TOKEN }}
+    draft_release:
+        name: Release Drafter
+        runs-on: ubuntu-latest
+        steps:
+            - name: Run release-drafter
+              uses: release-drafter/release-drafter@v6.1.0
+              env:
+                  GITHUB_TOKEN: ${{ secrets.API_TOKEN }}
