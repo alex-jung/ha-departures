@@ -7,6 +7,6 @@
     "integration_type": "hub",
     "iot_class": "cloud_polling",
     "issue_tracker": "https://github.com/alex-jung/ha-departures/issues",
-    "requirements": ["pytz>=2013.6", "apyefa==1.1.5"],
-    "version": "2.2.1"
+    "requirements": ["pytz>=2013.6", "apyefa==1.1.7"],
+    "version": "2.2.2"
 }
