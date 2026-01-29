@@ -7,7 +7,11 @@ DOMAIN = "ha_departures"
 DOMAIN_DATA = f"{DOMAIN}_data"
 VERSION = "2.2.2"
 
-ISSUE_URL = "https://github.com/alex-jung/ha-departures/issues"
+REPO_URL = "https://github.com/alex-jung/ha-departures"
+ISSUE_URL = f"{REPO_URL}/issues"
+API_URL = "https://api.transitous.org/api"
+
+HEADER_JSON: Final = "application/json"
 
 # Platforms
 SENSOR = "sensor"
