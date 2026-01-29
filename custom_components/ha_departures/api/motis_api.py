@@ -35,8 +35,8 @@ class MotisApi:
 
     def __get_headers(self) -> dict[str, str]:
         return {
-            "User-Agent": f"ha-departures/{VERSION} ({REPO_URL})",
-            "Accept": HEADER_JSON,
+            "User-Agent": str(f"ha-departures/{VERSION} ({REPO_URL})"),
+            "Accept": str(HEADER_JSON),
         }
 
     async def __send_get_request(
