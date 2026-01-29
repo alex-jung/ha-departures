@@ -14,8 +14,6 @@ from aiohttp import (
 from custom_components.ha_departures.api.data_classes import API_COMMAND
 from custom_components.ha_departures.const import HEADER_JSON, REPO_URL, VERSION
 
-from .exceptions import RequestMaximumRetriesExceeded
-
 logger = logging.getLogger(__name__)
 
 
@@ -67,7 +65,7 @@ class MotisApi:
         command: API_COMMAND,
         params: dict[str, str] | None = None,
         timeout: int = 10,
-        retry: int = 3,
+        retry: int = 0,
     ) -> Any:
         """Get data from the Motis API.
 
@@ -77,7 +75,7 @@ class MotisApi:
         :type params: dict[str, str] | None
         :param timeout: Timeout for the request in seconds. Default is 10 seconds.
         :type timeout: int
-        :param retry: Number of retries to attempt in case of failure. Default is 3 retries.
+        :param retry: Number of retries to attempt in case of failure. Default is 0 retries.
         :type retry: int
         :return: Data from the API
         :rtype: Any
@@ -87,17 +85,25 @@ class MotisApi:
 
         _timeout = ClientTimeout(total=timeout)
 
-        while retry > 0:
-            if self.session is None:
-                async with ClientSession() as session:
+        for attempt in range(retry + 1):
+            try:
+                session = self.session or ClientSession()
+
+                async with session:
                     return await self.__send_get_request(
                         url, session, headers, _timeout, params
                     )
-            else:
-                return await self.__send_get_request(
-                    url, self.session, headers, _timeout, params
-                )
+            except (ClientResponseError, ClientError, ClientSSLError):
+                if attempt < retry:
+                    logger.debug(
+                        "Retrying request to '%s' (attempt %d of %d)",
+                        url,
+                        attempt + 1,
+                        retry,
+                    )
+                else:
+                    raise
 
-            retry -= 1
-
-        raise RequestMaximumRetriesExceeded("Max retries exceeded")
+        return (
+            None  # This line is unreachable but added to satisfy function return type
+        )
