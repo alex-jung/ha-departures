@@ -82,7 +82,7 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
         try:
             self._data = await self.__fetch_data()
         except ClientResponseError as e:
-            _LOGGER.error("Response error: %s", e)
+            _LOGGER.info("Error fetching data from API. Error: %s", e)
             raise UpdateFailed(e) from e
 
         return self._data
