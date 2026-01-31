@@ -4,20 +4,24 @@ import logging
 from datetime import timedelta
 
 from aiohttp import ClientResponseError
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api.data_classes import ApiCommand, Departure
 from .api.motis_api import MotisApi
 from .const import (
+    CONF_LINES,
+    CONF_STOP_COORD,
+    CONF_STOP_IDS,
     DOMAIN,
     REQUEST_API_URL,
     REQUEST_RETRIES,
     REQUEST_TIMEOUT,
     REQUEST_TIMES_PER_LINE_COUNT,
+    UPDATE_INTERVAL,
 )
 
-SCAN_INTERVAL = timedelta(seconds=60)
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
@@ -27,11 +31,7 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
     def __init__(
         self,
         hass: HomeAssistant,
-        stop_ids: list[str],
-        stop_coord: tuple,
-        lines: list[dict],
-        hub_name: str,
-        config_entry,
+        config_entry: ConfigEntry,
     ) -> None:
         """Initialize."""
         super().__init__(
@@ -39,17 +39,15 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
             _LOGGER,
             name=DOMAIN,
             config_entry=config_entry,
-            update_interval=SCAN_INTERVAL,
+            update_interval=timedelta(seconds=UPDATE_INTERVAL),
         )
 
-        _LOGGER.debug(
-            "Initializing DeparturesDataUpdateCoordinator for stop_ids: %s", stop_ids
-        )
+        _LOGGER.debug("Initializing DeparturesDataUpdateCoordinator")
 
-        self._stop_ids: list[str] = stop_ids
-        self._stop_coord: tuple = stop_coord
-        self._hub_name: str = hub_name
-        self._lines: list[dict] = lines
+        self._stop_ids: list[str] = config_entry.data.get(CONF_STOP_IDS, [])
+        self._stop_coord: tuple = config_entry.data.get(CONF_STOP_COORD, ())
+        self._hub_name: str = config_entry.title
+        self._lines_count: int = len(config_entry.options.get(CONF_LINES, []))
         self._data: list[Departure] = []
 
         self._client = MotisApi(REQUEST_API_URL)
@@ -70,9 +68,14 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
         return self._hub_name
 
     @property
-    def lines(self) -> list[dict]:
-        """Return lines belong to this config entry."""
-        return self._lines
+    def lines(self) -> int:
+        """Return count of lines belong to this config entry."""
+        return self._lines_count
+
+    @lines.setter
+    def lines(self, new_count: int):
+        """Set count of lines belong to this config enttry."""
+        self._lines_count = new_count
 
     async def _async_update_data(self) -> list[Departure]:
         """Perform data fetching."""
@@ -96,7 +99,7 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
         for stop_id in self._stop_ids:
             PARAMS = {
                 "stopId": stop_id,
-                "n": str(REQUEST_TIMES_PER_LINE_COUNT * len(self._lines)),
+                "n": str(REQUEST_TIMES_PER_LINE_COUNT * self.lines),
             }
 
             _LOGGER.debug(

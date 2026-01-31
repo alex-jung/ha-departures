@@ -2,34 +2,38 @@
 
 from typing import Final
 
-NAME = "Public Transport Departures"
-DOMAIN = "ha_departures"
-VERSION = "3.0.0"
+NAME: Final = "Public Transport Departures"
+DOMAIN: Final = "ha_departures"
+VERSION: Final = "3.0.0"
 
 # Github URLs
-GITHUB_REPO_URL = "https://github.com/alex-jung/ha-departures"
-GITHUB_ISSUE_URL = f"{GITHUB_REPO_URL}/issues"
+GITHUB_REPO_URL: Final = "https://github.com/alex-jung/ha-departures"
+GITHUB_ISSUE_URL: Final = f"{GITHUB_REPO_URL}/issues"
 
 # Motis API constants
-PROVIDER_URL = "https://transitous.org/"
-REQUEST_API_URL = "https://api.transitous.org/api"
+PROVIDER_URL: Final = "https://transitous.org/"
+REQUEST_API_URL: Final = "https://api.transitous.org/api"
 REQUEST_HEADER_JSON: Final = "application/json"
 REQUEST_TIMEOUT: Final = 10  # seconds
 REQUEST_RETRIES: Final = 3  # number of retries for failed requests
 REQUEST_TIMES_PER_LINE_COUNT: Final = 20  # number of departure times to fetch per line
+UPDATE_INTERVAL: Final = 60  # seconds
 
 # Configuration and options
-CONF_STOP_NAME = "stop_name"
-CONF_STOP_IDS = "stop_ids"
-CONF_STOP_COORD = "stop_coord"
-CONF_API_URL = "api_url"
-CONF_ENDPOINT = "endpoint"
-CONF_LINES = "lines"
-CONF_HUB_NAME = "hub_name"
-CONF_ERROR_NO_STOP_FOUND = "no_stop_found"
-CONF_ERROR_NO_CHANGES_OPTIONS = "no_changes_configured"
-CONF_ERROR_INVALID_RESPONSE = "invalid_api_response"
-CONF_ERROR_CONNECTION_FAILED = "connection_failed"
+CONF_LOCATION: Final = "location"
+CONF_STOP_NAME: Final = "stop_name"
+CONF_STOP_IDS: Final = "stop_ids"
+CONF_STOP_COORD: Final = "stop_coord"
+CONF_API_URL: Final = "api_url"
+CONF_ENDPOINT: Final = "endpoint"
+CONF_LINES: Final = "lines"
+CONF_AVAILABLE_LINES: Final = "available_lines"
+CONF_HUB_NAME: Final = "hub_name"
+CONF_ERROR_NO_STOP_FOUND: Final = "no_stop_found"
+CONF_ERROR_NO_LINE_SELECTED: Final = "no_line_selected"
+CONF_ERROR_NO_CHANGES_OPTIONS: Final = "no_changes_configured"
+CONF_ERROR_INVALID_RESPONSE: Final = "invalid_api_response"
+CONF_ERROR_CONNECTION_FAILED: Final = "connection_failed"
 
 # Sensor attributes
 ATTR_LINE_NAME: Final = "line_name"

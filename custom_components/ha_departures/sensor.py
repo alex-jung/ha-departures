@@ -18,6 +18,7 @@ from .const import (
     ATTR_PROVIDER_URL,
     ATTR_TIMES,
     ATTR_TRANSPORT_TYPE,
+    CONF_LINES,
     DEPARTURES_PER_SENSOR_LIMIT,
     PROVIDER_URL,
 )
@@ -41,7 +42,7 @@ async def async_setup_entry(
                 coordinator,
                 line,
             )
-            for line in coordinator.lines
+            for line in entry.options.get(CONF_LINES, [])
         ],
         update_before_add=True,
     )

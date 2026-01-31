@@ -14,14 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.core_config import Config
 from homeassistant.exceptions import ConfigEntryNotReady
 
-from .const import (
-    CONF_HUB_NAME,
-    CONF_LINES,
-    CONF_STOP_COORD,
-    CONF_STOP_IDS,
-    DOMAIN,
-    STARTUP_MESSAGE,
-)
+from .const import DOMAIN, STARTUP_MESSAGE
 from .coordinator import DeparturesDataUpdateCoordinator
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
@@ -48,19 +41,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     _LOGGER.info(STARTUP_MESSAGE)
 
-    stop_ids: list[str] = entry.data.get(CONF_STOP_IDS, [])
-    stop_coord: tuple = entry.data.get(CONF_STOP_COORD, [])
-    lines: list[dict] = entry.data.get(CONF_LINES, [])
-    hub_name: str = entry.data.get(CONF_HUB_NAME, "")
-
-    coordinator = DeparturesDataUpdateCoordinator(
-        hass, stop_ids, stop_coord, lines, hub_name, entry
-    )
+    coordinator = DeparturesDataUpdateCoordinator(hass, entry)
 
     await coordinator.async_config_entry_first_refresh()
 
     if not coordinator.last_update_success:
-        raise ConfigEntryNotReady("Failed to get data from API")
+        raise ConfigEntryNotReady("Failed to get data from server")
 
     entry.runtime_data = RuntimeData(coordinator)
 
