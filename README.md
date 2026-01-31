@@ -15,7 +15,9 @@ This integration provides real-time information on upcoming departures across va
 The `Public Transport Departures` uses [Transitous](https://transitous.org/) as data source.
 
 ## Supported countries
-With the latest version (> 3.0.0) of ha-departures, the integration now supports public transport departure information across a wide range of countries worldwide, thanks to the integration of the [MOTIS API](https://api.transitous.org/). Users can access departure data from transit systems in the following regions:
+With the latest version (> 3.0.0) of ha-departures, the integration now supports public transport departure information across a wide range of countries worldwide, thanks to the integration of the [Transitous API](https://api.transitous.org/).
+
+Users can access departure data from transit systems in the following regions:
 
 <details>
 <summary>Countries</summary>
@@ -111,24 +113,24 @@ The configuration of integration is made via Home Assistant GUI
 3. Search for `Public Transport Departures`
 4. Click on integration to start [configuration dialog](#Configure-a-new-station)
 
-### Configure a new station
+### Configure a hub configuration
 
-#### Step 1 - Choose the location and radius to search
+#### Step 1 - Choose a location and radius to search
 
 ![image](assets/setup-step-1.png)
 
-#### Step 2 - Choose stop
+#### Step 2 - Choose a stop
 > Please select one stop location from the list
 
 ![image](assets/setup-step-2.png)
 
 #### Step 3 - Choose the connections
-> You will get list of connections provided by the API for selected stop
+> You will get list of connections provided by the API for selected stop.
 > Select all connection(s) you are interesting in and click on `Submit`
 
 ![image](assets/setup-step-3.png)
 
-#### Step 4 - Define name for new hub
+#### Step 4 - Define a name of new hub configuration
 Choose a name for your new hub configuration
 
 > [!WARNING]
@@ -140,7 +142,7 @@ After `Submit` a new `Hub` will be created incl. new sensor(s) for each connecti
 
 ![image](assets/setup-step-5.png)
 
-### Reconfigure an entry
+## Reconfigure an entry
 You can any time add or remove connections to existing `hub's` (stop locations)
 
 ![image](assets/setup-step-reconfig.png)
