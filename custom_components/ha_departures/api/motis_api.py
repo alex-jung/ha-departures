@@ -11,8 +11,13 @@ from aiohttp import (
     ClientTimeout,
 )
 
-from custom_components.ha_departures.api.data_classes import API_COMMAND
-from custom_components.ha_departures.const import HEADER_JSON, REPO_URL, VERSION
+from custom_components.ha_departures.const import (
+    REQUEST_API_URL,
+    REQUEST_HEADER_JSON,
+    VERSION,
+)
+
+from .data_classes import ApiCommand
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +40,8 @@ class MotisApi:
 
     def __get_headers(self) -> dict[str, str]:
         return {
-            "User-Agent": str(f"ha-departures/{VERSION} ({REPO_URL})"),
-            "Accept": str(HEADER_JSON),
+            "User-Agent": str(f"ha-departures/{VERSION} ({REQUEST_API_URL})"),
+            "Accept": str(REQUEST_HEADER_JSON),
         }
 
     async def __send_get_request(
@@ -47,6 +52,10 @@ class MotisApi:
         timeout: ClientTimeout,
         params: dict[str, str] | None = None,
     ):
+        logger.debug("Sending GET request to URL: %s with params: %s", url, params)
+        logger.debug("Request headers: %s", headers)
+        logger.debug("Request timeout: %s", timeout)
+
         try:
             async with session.get(
                 url, params=params, headers=headers, timeout=timeout
@@ -62,7 +71,7 @@ class MotisApi:
 
     async def get(
         self,
-        command: API_COMMAND,
+        command: ApiCommand,
         params: dict[str, str] | None = None,
         timeout: int = 10,
         retry: int = 0,
@@ -70,7 +79,7 @@ class MotisApi:
         """Get data from the Motis API.
 
         :param command: Command to execute
-        :type command: API_COMMAND
+        :type command: ApiCommand
         :param params: Parameters for the request
         :type params: dict[str, str] | None
         :param timeout: Timeout for the request in seconds. Default is 10 seconds.
@@ -79,6 +88,11 @@ class MotisApi:
         :type retry: int
         :return: Data from the API
         :rtype: Any
+
+        :raises ClientResponseError: If an HTTP error occurs
+        :raises ClientError: If a network error occurs
+        :raises ClientSSLError: If an SSL error occurs
+
         """
         url = f"{self.base_url}/{command.value}"
         headers = self.__get_headers()
