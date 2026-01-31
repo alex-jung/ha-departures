@@ -12,7 +12,7 @@ from aiohttp import (
 )
 
 from custom_components.ha_departures.const import (
-    REQUEST_API_URL,
+    GITHUB_REPO_URL,
     REQUEST_HEADER_JSON,
     VERSION,
 )
@@ -40,7 +40,7 @@ class MotisApi:
 
     def __get_headers(self) -> dict[str, str]:
         return {
-            "User-Agent": str(f"ha-departures/{VERSION} ({REQUEST_API_URL})"),
+            "User-Agent": str(f"ha-departures/{VERSION} ({GITHUB_REPO_URL})"),
             "Accept": str(REQUEST_HEADER_JSON),
         }
 
