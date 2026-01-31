@@ -134,7 +134,7 @@ The configuration of integration is made via Home Assistant GUI
 Choose a name for your new hub configuration
 
 > [!WARNING]
-> No duplicate names to existing hubs are allowed!
+> Duplicate names to existing hubs are not allowed!
 
 ![image](assets/setup-step-4.png)
 
