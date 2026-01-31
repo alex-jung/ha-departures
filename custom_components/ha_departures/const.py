@@ -20,7 +20,7 @@ REQUEST_TIMES_PER_LINE_COUNT: Final = 20  # number of departure times to fetch p
 
 # Configuration and options
 CONF_STOP_NAME = "stop_name"
-CONF_STOP_ID = "stop_id"
+CONF_STOP_IDS = "stop_ids"
 CONF_STOP_COORD = "stop_coord"
 CONF_API_URL = "api_url"
 CONF_ENDPOINT = "endpoint"
@@ -34,11 +34,8 @@ CONF_ERROR_CONNECTION_FAILED = "connection_failed"
 # Sensor attributes
 ATTR_LINE_NAME: Final = "line_name"
 ATTR_LINE_ID: Final = "line_id"
-ATTR_STOP_ID: Final = "stop_id"
 ATTR_TRANSPORT_TYPE: Final = "transport"
 ATTR_DIRECTION: Final = "direction"
-ATTR_DIRECTION_TEXT: Final = "direction_text"
-ATTR_DEPARTURES: Final = "departures"
 ATTR_PROVIDER_URL: Final = "data_provider"
 ATTR_TIMES: Final = "times"
 ATTR_PLANNED_DEPARTURE_TIME: Final = "planned"
