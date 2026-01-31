@@ -1,58 +1,77 @@
 """Adds config flow for Public Transport Departures."""
 
 import logging
-from copy import deepcopy
 from typing import Any
 
 import homeassistant.helpers.config_validation as cv
-import homeassistant.helpers.entity_registry as er
 import voluptuous as vol
-from aiohttp import ConnectionTimeoutError
-from apyefa import EfaClient, Line, LineRequestType, Location, LocationFilter
-from apyefa.exceptions import EfaConnectionError, EfaResponseInvalid
+from aiohttp import ClientError, ClientResponseError
 from homeassistant import config_entries
+from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
+    LocationSelector,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
 )
 
+from .api.data_classes import ApiCommand, Line, Stop, TransportMode
+from .api.motis_api import MotisApi
 from .const import (
-    CONF_API_URL,
-    CONF_ENDPOINT,
+    CONF_AVAILABLE_LINES,
     CONF_ERROR_CONNECTION_FAILED,
     CONF_ERROR_INVALID_RESPONSE,
     CONF_ERROR_NO_CHANGES_OPTIONS,
+    CONF_ERROR_NO_LINE_SELECTED,
     CONF_ERROR_NO_STOP_FOUND,
     CONF_HUB_NAME,
     CONF_LINES,
+    CONF_LOCATION,
     CONF_STOP_COORD,
-    CONF_STOP_ID,
+    CONF_STOP_IDS,
     CONF_STOP_NAME,
     DOMAIN,
-    EFA_ENDPOINTS,
+    REQUEST_API_URL,
     VERSION,
 )
-from .helper import create_unique_id, get_unique_lines, line_hash
+from .helper import bounding_box
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def _send_api_request(api: MotisApi, command, params):
+    error = CONF_ERROR_CONNECTION_FAILED
+
+    try:
+        return await api.get(command, params=params)
+    except ClientResponseError as e:
+        error = CONF_ERROR_INVALID_RESPONSE
+        _LOGGER.error("Client response failty. Error: %s", str(e))
+    except ClientError as e:
+        _LOGGER.error("Client error occured. Error: %s", str(e))
+        error = CONF_ERROR_CONNECTION_FAILED
+
+    raise ValueError(error)
 
 
 class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for ha_departures."""
 
-    VERSION = 1
-    MINOR_VERSION = 4
+    VERSION = 2
+    MINOR_VERSION = 0
 
     def __init__(self) -> None:
         """Initialize."""
         self._url: str = ""
-        self._all_stops: list[Location] = []
-        self._stop: Location | None = None
+        self._all_stops: list[Stop] = []
+        self._stop = None
+        self._selected_stops: list[Stop] = []
         self._lines: list[Line] = []
         self._data: dict[str, Any] = {}
+        self._options: dict[str, Any] = {}
+        self._api = MotisApi(base_url=REQUEST_API_URL)
 
         _LOGGER.debug(" Start CONFIGURATION flow ".center(60, "="))
         _LOGGER.debug(">> ha-departures version: %s", VERSION)
@@ -70,58 +89,58 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         _LOGGER.debug(">> user input: %s", user_input)
 
         if user_input is not None:
-            self._url = user_input[CONF_ENDPOINT]
+            location = user_input[CONF_LOCATION]
+            latitude = location["latitude"]
+            longitude = location["longitude"]
+            radius = location.get("radius", 1000)
+
+            box = bounding_box(latitude, longitude, radius)
 
             try:
-                async with EfaClient(self._url) as client:
-                    self._all_stops = await client.locations_by_name(
-                        user_input[CONF_STOP_NAME], filters=[LocationFilter.STOPS]
-                    )
-            except (EfaConnectionError, ConnectionTimeoutError) as err:
-                _errors[CONF_ERROR_CONNECTION_FAILED] = CONF_ERROR_CONNECTION_FAILED
-                _LOGGER.error('Failed to connect EFA api "%s"', self._url, exc_info=err)
-            except EfaResponseInvalid as err:
-                _errors[CONF_ERROR_INVALID_RESPONSE] = CONF_ERROR_INVALID_RESPONSE
-                _LOGGER.error("Received invalid response from api", exc_info=err)
+                data = await _send_api_request(
+                    self._api,
+                    ApiCommand.STOPS,
+                    {
+                        "max": f"{box[0][0]},{box[0][1]}",
+                        "min": f"{box[1][0]},{box[1][1]}",
+                    },
+                )
+            except ValueError as err:
+                _errors[CONF_LOCATION] = str(err)
 
             if not _errors:
-                _LOGGER.debug(
-                    '%s stop(s) found for "%s":',
-                    len(self._all_stops),
-                    user_input[CONF_STOP_NAME],
-                )
+                self._all_stops = [Stop.from_dict(item) for item in data]
+                _LOGGER.debug("%s stop(s) found", len(self._all_stops))
 
                 for stop in self._all_stops:
-                    _LOGGER.debug(
+                    _LOGGER.info(
                         "> %s(%s)",
                         stop.name,
                         stop.id,
                     )
 
                 if not self._all_stops:
-                    _errors[CONF_ERROR_NO_STOP_FOUND] = CONF_ERROR_NO_STOP_FOUND
+                    _errors[CONF_LOCATION] = CONF_ERROR_NO_STOP_FOUND
                 else:
                     return await self.async_step_stop()
 
-        endpoints = [
-            SelectOptionDict(label=name, value=url)
-            for name, url in EFA_ENDPOINTS.items()
-        ]
+        home_location = {
+            CONF_LATITUDE: self.hass.config.latitude,
+            CONF_LONGITUDE: self.hass.config.longitude,
+        }
 
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_ENDPOINT): SelectSelector(
-                        SelectSelectorConfig(
-                            options=endpoints,
-                            multiple=False,
-                            sort=False,
-                            mode=SelectSelectorMode.DROPDOWN,
-                        )
+                    vol.Required(
+                        CONF_LOCATION, default=home_location
+                    ): LocationSelector(
+                        config={
+                            "radius": True,
+                        }
                     ),
-                    vol.Required(CONF_STOP_NAME): str,
-                }
+                },
             ),
             errors=_errors,
         )
@@ -134,30 +153,29 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         _LOGGER.debug(">> user input: %s", user_input)
 
         if user_input is not None:
-            self._stop = next(
-                filter(lambda x: x.id == user_input[CONF_STOP_NAME], self._all_stops)
+            self._selected_stops = list(
+                filter(lambda x: x.name == user_input[CONF_STOP_NAME], self._all_stops)
             )
 
-            if not self._stop:
-                _LOGGER.error("No stop found")
-                return self.async_abort(reason="No stop found")
+            _LOGGER.debug(" Selected stop(s) ".center(80, "-"))
+            for stop in self._selected_stops:
+                _LOGGER.debug(">> %s (%s)", stop.name, stop.id)
 
-            _LOGGER.debug(
-                "Selected stop: %s(%s)",
-                self._stop.name,
-                self._stop.id,
+            self._data.update(
+                {
+                    CONF_STOP_IDS: [x.id for x in self._selected_stops],
+                    CONF_STOP_NAME: user_input[CONF_STOP_NAME],
+                    CONF_STOP_COORD: [
+                        self._selected_stops[0].latitude,
+                        self._selected_stops[0].longitude,
+                    ],
+                }
             )
 
             if not _errors:
                 return await self.async_step_lines()
 
-        stop_list: list[SelectOptionDict] = [
-            SelectOptionDict(
-                label=stop.name,
-                value=stop.id,
-            )
-            for stop in self._all_stops
-        ]
+        stops = list({x.name for x in self._all_stops})
 
         return self.async_show_form(
             step_id="stop",
@@ -165,7 +183,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_STOP_NAME): SelectSelector(
                         SelectSelectorConfig(
-                            options=stop_list,
+                            options=stops,
                             multiple=False,
                             sort=True,
                             mode=SelectSelectorMode.DROPDOWN,
@@ -184,64 +202,81 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         _LOGGER.debug(">> user input: %s", user_input)
 
         if user_input is not None:
-            # filter connections by user input
-            connections = list(
-                filter(
-                    lambda x: line_hash(x) in user_input[CONF_LINES],
-                    self._lines,
-                )
-            )
+            selected_lines: list[Line] = []
 
-            for line in connections:
-                _LOGGER.debug(
-                    "Selected line: %s(%s) -> %s(%s)",
-                    line.name,
-                    line.id,
-                    line.destination.name,
-                    line.destination.id,
+            for line in user_input.get(CONF_LINES, []):
+                (routeId, directionId) = line.split("---")
+
+                selected_lines.append(
+                    next(
+                        filter(
+                            lambda x: x.route_id == routeId
+                            and x.direction_id == directionId,
+                            self._lines,
+                        )
+                    )
                 )
 
-            assert self._stop is not None
+            if not selected_lines:
+                _errors[CONF_LINES] = CONF_ERROR_NO_LINE_SELECTED
+            else:
+                self._data.update(
+                    {
+                        CONF_AVAILABLE_LINES: [x.to_dict() for x in self._lines],
+                    }
+                )
+                self._options.update(
+                    {
+                        CONF_LINES: [x.to_dict() for x in selected_lines],
+                    }
+                )
 
-            self._data = {
-                CONF_API_URL: self._url,
-                CONF_STOP_ID: self._stop.id,
-                CONF_STOP_NAME: self._stop.name,
-                CONF_STOP_COORD: self._stop.coord,
-                CONF_LINES: [x.to_dict() for x in connections],
-            }
+                return await self.async_step_hubname()
 
-            return await self.async_step_hubname()
-
-        # load all lines for choosen stop location
         self._lines = []
 
-        assert self._stop is not None
+        for stop in self._selected_stops:
+            _LOGGER.debug("Fetching stop times for stop: %s", stop.id)
 
-        async with EfaClient(self._url) as client:
-            self._lines = await client.lines_by_location(
-                self._stop.id,
-                req_types=[LineRequestType.DEPARTURE_MONITOR],
-                show_trains_explicit=True,
-            )
+            try:
+                stop_times = await _send_api_request(
+                    self._api,
+                    ApiCommand.STOP_TIMES,
+                    {
+                        "stopId": str(stop.id),
+                        "n": str(20),
+                    },
+                )
+            except ValueError as err:
+                _errors[CONF_LOCATION] = str(err)
 
-        self._lines = get_unique_lines(self._lines)
+            data = stop_times.get("stopTimes", [])
 
-        _LOGGER.debug("Step lines: %s unique line(s) found:", len(self._lines))
+            for stop_time in data:
+                line = Line(
+                    route_id=stop_time.get("routeId"),
+                    direction_id=stop_time.get("directionId"),
+                    head_sign=stop_time.get("headsign"),
+                    route_short_name=stop_time.get("routeShortName"),
+                    mode=TransportMode(stop_time.get("mode")),
+                )
 
-        for line in self._lines:
-            _LOGGER.debug(
-                "> %s(%s) --> %s(%s)",
-                line.name,
-                line.id,
-                line.destination.name,
-                line.destination.id,
-            )
+                _LOGGER.debug(
+                    "Found line: [%s-%s] %s (%s)",
+                    line.mode,
+                    line.head_sign,
+                    line.route_short_name,
+                    line.direction_id,
+                )
+
+                self._lines.append(line)
+
+        self._lines = list(set(self._lines))  # remove duplicate lines
 
         line_list: list[SelectOptionDict] = [
             SelectOptionDict(
-                label=f"{line.name} - {line.destination.name}",
-                value=line_hash(line),
+                label=f"{line.route_short_name} - {line.head_sign}",
+                value=f"{line.route_id}---{line.direction_id}",
             )
             for line in self._lines
         ]
@@ -269,12 +304,10 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         _LOGGER.debug(' Start "step_hubname" '.center(60, "-"))
         _LOGGER.debug(">> user input: %s", user_input)
 
-        assert self._stop is not None
+        stop_name = self._data.get(CONF_STOP_NAME, "")
 
         if user_input is not None:
-            await self.async_set_unique_id(
-                user_input.get(CONF_HUB_NAME, self._stop.name)
-            )
+            await self.async_set_unique_id(user_input.get(CONF_HUB_NAME, stop_name))
             self._abort_if_unique_id_configured()
 
             self._data.update({CONF_HUB_NAME: user_input[CONF_HUB_NAME]})
@@ -282,12 +315,13 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(
                 title=user_input[CONF_HUB_NAME],
                 data=self._data,
+                options=self._options,
             )
 
         return self.async_show_form(
             step_id="hubname",
             data_schema=vol.Schema(
-                {vol.Required(CONF_HUB_NAME, default=self._stop.name): cv.string}
+                {vol.Required(CONF_HUB_NAME, default=stop_name): cv.string}
             ),
         )
 
@@ -315,14 +349,12 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
             ">> config entry: %s(uid=%s)", config_entry.title, config_entry.unique_id
         )
 
-        self._connections_selected: list[Line] = [
-            Line.from_dict(x) for x in config_entry.data.get(CONF_LINES, [])
+        self._lines_selected: list[Line] = [
+            Line.from_dict(x) for x in config_entry.options.get(CONF_LINES, [])
         ]
-        self._connections: list[Line] = []
-        self._stop_name: str = config_entry.data.get(CONF_STOP_NAME)  # type: ignore  # noqa: PGH003
-        self._stop_id: str = config_entry.data.get(CONF_STOP_ID)  # type: ignore  # noqa: PGH003
-        self._url: str = config_entry.data.get(CONF_API_URL)  # type: ignore  # noqa: PGH003
-        self._hub_name: str = config_entry.data.get(CONF_HUB_NAME)  # type: ignore  # noqa: PGH003
+        self._lines_available: list[Line] = [
+            Line.from_dict(x) for x in config_entry.data.get(CONF_AVAILABLE_LINES, [])
+        ]
 
         _LOGGER.debug("Start configuration")
 
@@ -333,125 +365,41 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
         _LOGGER.debug(">> user input: %s", user_input)
 
         if user_input is not None:
-            lines_new = user_input.get(CONF_LINES, [])
-            lines_old = [line_hash(x) for x in self._connections_selected]
+            lines_user_choose = user_input.get(CONF_LINES, [])
 
-            # hash values of removed and added lines
-            lines_hash_removed = list(filter(lambda x: x not in lines_new, lines_old))
-            lines_hash_added = list(filter(lambda x: x not in lines_old, lines_new))
+            lines_new_state: list[Line] = []
 
-            # convert lists of hashes to list of Line objects
-            removed_connections: list[Line] = list(
-                filter(
-                    lambda x: line_hash(x) in lines_hash_removed,
-                    self._connections_selected,
-                )
-            )
-            added_connections: list[Line] = list(
-                filter(
-                    lambda x: line_hash(x) in lines_hash_added,
-                    self._connections,
-                )
-            )
+            for user_option in lines_user_choose:
+                (route_id, direction_id) = user_option.split("---")
 
-            _LOGGER.debug(" Connections removed ".center(60, "="))
-            for line in removed_connections:
-                _LOGGER.debug(
-                    ">> %s(%s) -> %s(%s)",
-                    line.name,
-                    line.id,
-                    line.destination.name,
-                    line.destination.id,
-                )
-
-            _LOGGER.debug(" Connections added ".center(60, "="))
-            for line in added_connections:
-                _LOGGER.debug(
-                    ">> %s(%s) -> %s(%s)",
-                    line.name,
-                    line.id,
-                    line.destination.name,
-                    line.destination.id,
-                )
-
-            if not removed_connections and not added_connections:
-                _LOGGER.debug("No changes on entry configuration detected")
-                return self.async_abort(reason=CONF_ERROR_NO_CHANGES_OPTIONS)
-
-            updated_config = deepcopy(self.config_entry.data[CONF_LINES])
-
-            entity_registry = er.async_get(self.hass)
-            entries = er.async_entries_for_config_entry(
-                entity_registry, self.config_entry.entry_id
-            )
-
-            connections_map = {e.unique_id: e.entity_id for e in entries}
-
-            # remove connection(s)
-            for line_id in removed_connections:
-                uid = create_unique_id(line_id, self._hub_name)
-
-                if not uid:
-                    _LOGGER.error('Failed to create unique id for line "%s"', line_id)
-                    continue
-
-                _LOGGER.debug('Remove connection "%s"', uid)
-
-                entity_to_remove = connections_map.get(uid)
-
-                if not entity_to_remove:
-                    _LOGGER.error('Entity to remove "%s" not found in map', uid)
-                else:
-                    entity_registry.async_remove(connections_map[uid])
-
-                updated_config = list(
-                    filter(
-                        lambda x: create_unique_id(x, self._hub_name) != uid,
-                        updated_config,
+                lines_new_state.append(
+                    next(
+                        filter(
+                            lambda x: x.route_id == route_id
+                            and x.direction_id == direction_id,
+                            self._lines_available,
+                        )
                     )
                 )
 
-            # add new connection(s)
-            for connection in added_connections:
-                updated_config.append(connection.to_dict())
+            if lines_new_state == self._lines_selected:
+                _LOGGER.debug("No changes on entry configuration detected")
+                return self.async_abort(reason=CONF_ERROR_NO_CHANGES_OPTIONS)
 
-            self.hass.config_entries.async_update_entry(
-                self.config_entry,
+            return self.async_create_entry(
+                title="",
                 data={
-                    **self.config_entry.data,
-                    CONF_LINES: updated_config,
+                    CONF_LINES: [x.to_dict() for x in lines_new_state],
                 },
             )
 
-            return self.async_create_entry(data=self.config_entry.data)
-
-        self._connections: list[Line] = []
-
-        async with EfaClient(self._url) as client:
-            self._connections = await client.lines_by_location(
-                self._stop_id,
-                req_types=[LineRequestType.DEPARTURE_MONITOR],
-                show_trains_explicit=True,
-            )
-
-        line_list: list[SelectOptionDict] = [
+        options_list: list[SelectOptionDict] = [
             SelectOptionDict(
-                label=f"{line.name} - {line.destination.name}",
-                value=line_hash(line),
+                label=f"{line.route_short_name} - {line.head_sign}",
+                value=f"{line.route_id}---{line.direction_id}",
             )
-            for line in get_unique_lines(self._connections)
+            for line in self._lines_available
         ]
-
-        for line in line_list:
-            _LOGGER.debug("> %s", line)
-
-        default_list = [line_hash(x) for x in self._connections_selected]
-
-        for line in default_list:
-            _LOGGER.debug(
-                ">> Selected line: %s",
-                next(filter(lambda x: x["value"] == line, line_list), None),
-            )
 
         return self.async_show_form(
             step_id="init",
@@ -459,10 +407,13 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
                 {
                     vol.Required(
                         "lines",
-                        default=[line_hash(x) for x in self._connections_selected],
+                        default=[
+                            f"{x.route_id}---{x.direction_id}"
+                            for x in self._lines_selected
+                        ],
                     ): SelectSelector(
                         SelectSelectorConfig(
-                            options=line_list,
+                            options=options_list,
                             multiple=True,
                             sort=True,
                             mode=SelectSelectorMode.DROPDOWN,

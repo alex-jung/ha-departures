@@ -1,59 +1,61 @@
 {
-  "config":
-  {
-    "step":
-    {
-      "user": {
-        "title": "Public Transport Departures",
-        "description": "Please select API endpoint and enter stop name:",
-        "data": {
-          "endpoint": "Endpoint",
-          "stop_name": "Stop name"
-        }
+  "config": {
+      "step": {
+          "user": {
+              "data": {
+                  "location": "Please choose a location and search radius to find stops"
+              },
+              "data_description": {
+              }
+          },
+          "stop": {
+              "data": {
+                  "stop_name": "Stop name"
+              },
+              "data_description": {
+                  "stop_name": "Please select a stop"
+              }
+          },
+          "lines": {
+              "data": {
+                  "lines": "Routes"
+              },
+              "data_description": {
+                  "lines": "Please select routes to monitor"
+              }
+          },
+          "hubname": {
+              "data": {
+                  "hub_name": "Hub name"
+              },
+              "data_description": {
+                  "hub_name": "Please enter the name of the new configuration hub."
+              }
+          }
       },
-      "stop": {
-        "title": "Public Transport Departures",
-        "description": "Select stop:",
-        "data": {
-          "stop_name": "Stop name"
-        }
+      "error": {
+          "no_stop_found": "No stops found.",
+          "invalid_api_response": "Received invalid response from server.",
+          "connection_failed": "Connection to server failed. Please try again later.",
+          "no_line_selected": "Please select at least one route."
       },
-      "lines": {
-        "title": "Public Transport Departures",
-        "description": "Select routes to monitor:",
-        "data": {
-          "lines": "Routes"
-        }
-      },
-      "hubname": {
-        "title": "Public Transport Departures",
-        "description": "Please enter name of new hub:",
-        "data": {
-          "hub_name": "Hub name"
-        }
+      "abort": {
+          "already_configured": "This stop is already configured"
       }
-    },
-    "error": {
-      "no_stop_found": "No locations found",
-      "invalid_api_response": "Received invalid response from EFA endpoint",
-      "connection_failed": "Connection to EFA endpoint failed. Try later again."
-    },
-    "abort": {
-      "already_configured": "[%key:common::config_flow::abort::already_configured_location%]"
-    }
   },
   "options": {
-    "step": {
-      "init": {
-          "title": "Public Transport Departures",
-          "description": "Select routes to monitor:",
-          "data": {
-            "lines": "Routes"
+      "step": {
+          "init": {
+              "data": {
+                  "lines": "Routes"
+              },
+              "data_description": {
+                  "lines": "Select routes to monitor"
+              }
           }
+      },
+      "abort": {
+          "no_changes_configured": "No changes configured"
       }
-    },
-    "abort":{
-      "no_changes_configured": "No changes configured"
-    }
   }
 }

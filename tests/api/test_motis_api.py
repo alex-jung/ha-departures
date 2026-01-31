@@ -4,7 +4,7 @@ import pytest
 from aiohttp import ClientError, ClientResponseError
 from aioresponses import aioresponses
 
-from custom_components.ha_departures.api.data_classes import API_COMMAND
+from custom_components.ha_departures.api.data_classes import ApiCommand
 from custom_components.ha_departures.api.motis_api import MotisApi
 
 
@@ -17,10 +17,10 @@ def mock_api():  # noqa: D103
 @pytest.mark.parametrize(
     ("command"),
     [
-        (API_COMMAND.STOPS),
-        (API_COMMAND.STOP_TIMES),
-        (API_COMMAND.ONE_TO_ALL),
-        (API_COMMAND.REVERSE_GEOCODE),
+        (ApiCommand.STOPS),
+        (ApiCommand.STOP_TIMES),
+        (ApiCommand.ONE_TO_ALL),
+        (ApiCommand.REVERSE_GEOCODE),
     ],
 )
 async def test_get_success(mock_api, command):  # noqa: D103
@@ -43,10 +43,10 @@ async def test_get_success(mock_api, command):  # noqa: D103
 @pytest.mark.parametrize(
     ("command"),
     [
-        (API_COMMAND.STOPS),
-        (API_COMMAND.STOP_TIMES),
-        (API_COMMAND.ONE_TO_ALL),
-        (API_COMMAND.REVERSE_GEOCODE),
+        (ApiCommand.STOPS),
+        (ApiCommand.STOP_TIMES),
+        (ApiCommand.ONE_TO_ALL),
+        (ApiCommand.REVERSE_GEOCODE),
     ],
 )
 async def test_get_http_error(mock_api, command):  # noqa: D103
@@ -66,10 +66,10 @@ async def test_get_http_error(mock_api, command):  # noqa: D103
 @pytest.mark.parametrize(
     ("command"),
     [
-        (API_COMMAND.STOPS),
-        (API_COMMAND.STOP_TIMES),
-        (API_COMMAND.ONE_TO_ALL),
-        (API_COMMAND.REVERSE_GEOCODE),
+        (ApiCommand.STOPS),
+        (ApiCommand.STOP_TIMES),
+        (ApiCommand.ONE_TO_ALL),
+        (ApiCommand.REVERSE_GEOCODE),
     ],
 )
 async def test_get_network_error(mock_api, command):  # noqa: D103
@@ -89,10 +89,10 @@ async def test_get_network_error(mock_api, command):  # noqa: D103
 @pytest.mark.parametrize(
     ("command"),
     [
-        (API_COMMAND.STOPS),
-        (API_COMMAND.STOP_TIMES),
-        (API_COMMAND.ONE_TO_ALL),
-        (API_COMMAND.REVERSE_GEOCODE),
+        (ApiCommand.STOPS),
+        (ApiCommand.STOP_TIMES),
+        (ApiCommand.ONE_TO_ALL),
+        (ApiCommand.REVERSE_GEOCODE),
     ],
 )
 async def test_get_max_retries_exceeded(mock_api, command):  # noqa: D103

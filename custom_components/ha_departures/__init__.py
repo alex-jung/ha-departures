@@ -5,115 +5,30 @@ https://github.com/alex-jung/ha-departures
 """
 
 import logging
-from datetime import timedelta
+from dataclasses import dataclass
 
-from apyefa import Departure, EfaClient, Line
-from apyefa.exceptions import EfaConnectionError, EfaResponseInvalid
+import homeassistant.helpers.config_validation as cv
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.core_config import Config
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from homeassistant.util import dt as dt_util
 
-from .const import (
-    CONF_API_URL,
-    CONF_HUB_NAME,
-    CONF_LINES,
-    CONF_STOP_COORD,
-    CONF_STOP_ID,
-    CONF_STOP_NAME,
-    DOMAIN,
-    STARTUP_MESSAGE,
-)
+from .const import DOMAIN, STARTUP_MESSAGE
+from .coordinator import DeparturesDataUpdateCoordinator
 
-SCAN_INTERVAL = timedelta(seconds=60)
-
-_LOGGER: logging.Logger = logging.getLogger(__package__)
+_LOGGER: logging.Logger = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.SENSOR]
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
-class DeparturesDataUpdateCoordinator(DataUpdateCoordinator):
-    """Class to manage fetching data from the API."""
 
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        url: str,
-        stop_id: str,
-        stop_name: str,
-        stop_coord: tuple,
-        lines: list[dict],
-        hub_name: str,
-        config_entry,
-    ) -> None:
-        """Initialize."""
-        super().__init__(
-            hass,
-            _LOGGER,
-            name=DOMAIN,
-            config_entry=config_entry,
-            update_interval=SCAN_INTERVAL,
-        )
+@dataclass
+class RuntimeData:
+    """Data class for runtime data."""
 
-        self._url: str = url
-        self._stop_id: str = stop_id
-        self._stop_name: str = stop_name
-        self._stop_coord: tuple = stop_coord
-        self._hub_name: str = hub_name
-        self._lines = [Line.from_dict(x) for x in lines]
-        self._data = list[Departure]
-
-    @property
-    def stop_name(self):
-        """Return config entry stop name."""
-        return self._stop_name
-
-    @property
-    def stop_id(self):
-        """Return config entry stop ID."""
-        return self._stop_id
-
-    @property
-    def stop_coord(self):
-        """Return config entry stop coordinates."""
-        return self._stop_coord
-
-    @property
-    def hub_name(self):
-        """Return config entry hub name."""
-        return self._hub_name
-
-    @property
-    def lines(self):
-        """Return lines/sensors belong to this config entry."""
-        return self._lines
-
-    @property
-    def api_url(self):
-        """Return Provider API URL."""
-        return self._url
-
-    async def _async_update_data(self):
-        """Fetch data from endpoint."""
-
-        now_time = dt_util.now().strftime("%H:%M")
-
-        async with EfaClient(self._url) as client:
-            try:
-                self._data = await client.departures_by_location(
-                    self._stop_id, arg_date=now_time, realtime=True
-                )
-            except EfaConnectionError as err:
-                _LOGGER.error("Connection to EFA client failed")
-                raise UpdateFailed(err) from err
-            except EfaResponseInvalid as err:
-                _LOGGER.error("EFA response invalid")
-                raise UpdateFailed(err) from err
-
-        return self._data
+    coordinator: DeparturesDataUpdateCoordinator
 
 
 async def async_setup(hass: HomeAssistant, config: Config):
@@ -123,27 +38,17 @@ async def async_setup(hass: HomeAssistant, config: Config):
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up this integration using UI."""
-    if hass.data.get(DOMAIN) is None:
-        hass.data.setdefault(DOMAIN, {})
-        _LOGGER.info(STARTUP_MESSAGE)
 
-    url: str = entry.data.get(CONF_API_URL)
-    stop_id: str = entry.data.get(CONF_STOP_ID)
-    stop_name: str = entry.data.get(CONF_STOP_NAME)
-    stop_coord: tuple = entry.data.get(CONF_STOP_COORD)
-    lines: list[dict] = entry.data.get(CONF_LINES)
-    hub_name: str = entry.data.get(CONF_HUB_NAME)
+    _LOGGER.info(STARTUP_MESSAGE)
 
-    coordinator = DeparturesDataUpdateCoordinator(
-        hass, url, stop_id, stop_name, stop_coord, lines, hub_name, entry
-    )
+    coordinator = DeparturesDataUpdateCoordinator(hass, entry)
 
     await coordinator.async_config_entry_first_refresh()
 
     if not coordinator.last_update_success:
-        raise ConfigEntryNotReady
+        raise ConfigEntryNotReady("Failed to get data from server")
 
-    entry.runtime_data = coordinator
+    entry.runtime_data = RuntimeData(coordinator)
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
@@ -159,68 +64,3 @@ async def _async_update_listener(hass: HomeAssistant, entry) -> None:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload ha-departures config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
-
-
-async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
-    """Migrate old entry."""
-    _LOGGER.debug(
-        "Migrating configuration from version %s.%s",
-        config_entry.version,
-        config_entry.minor_version,
-    )
-
-    if config_entry.version > 1:
-        # This means the user has downgraded from a future version
-        return False
-
-    if config_entry.version == 1:
-        new_data = {**config_entry.data}
-
-        # Migrate from minor version 1 to 2
-        if config_entry.minor_version < 2:
-            new_data.update({CONF_HUB_NAME: config_entry.data.get(CONF_STOP_NAME)})
-        elif config_entry.minor_version < 3:
-            # Migrate from minor version 2 to 3
-            if new_data.get(CONF_API_URL) == "https://efa.vvo-online.de/VMSSL3/":
-                _LOGGER.debug("Migrating VMS URL to new VVO/VMS URL")
-                new_data.update({CONF_API_URL: "https://efa.vvo-online.de/std3/"})
-        elif config_entry.minor_version < 4:
-            # Migrate from minor version 3 to 4
-            if not new_data.get(CONF_STOP_COORD):
-                _LOGGER.debug(
-                    "Migrating stop coordinates: No coordinates set, trying to fetch them from EFA client"
-                )
-                api = new_data.get(CONF_API_URL)
-                stop_id = new_data.get(CONF_STOP_ID)
-
-                async with EfaClient(api) as client:
-                    try:
-                        stops = await client.locations_by_name(stop_id)
-
-                        if stops and len(stops) == 1 and stops[0].coord:
-                            new_data.update({CONF_STOP_COORD: stops[0].coord})
-                            _LOGGER.debug(
-                                "Migrating stop coordinates: Found coordinates %s",
-                                stops[0].coord,
-                            )
-                        else:
-                            _LOGGER.error(
-                                "Migrating stop coordinates: No coordinates found or multiple stops found"
-                            )
-                    except (EfaConnectionError, EfaResponseInvalid) as err:
-                        _LOGGER.error(
-                            "Migrating stop coordinates: Connection to EFA client failed"
-                        )
-                        _LOGGER.debug("Error: %s", err)
-
-        hass.config_entries.async_update_entry(
-            config_entry, data=new_data, minor_version=3, version=1
-        )
-
-    _LOGGER.debug(
-        "Migration to configuration version %s.%s successful",
-        config_entry.version,
-        config_entry.minor_version,
-    )
-
-    return True

@@ -1,4 +1,4 @@
-# Departures
+# Public Transport Departures
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 ![GitHub Release](https://img.shields.io/github/v/release/alex-jung/ha-departures)
 ![GitHub License](https://img.shields.io/github/license/alex-jung/ha-departures)
@@ -7,98 +7,87 @@
   <img width="300" src="https://github.com/user-attachments/assets/67e3ba87-94ea-4d27-b891-f6cbab779830"/>
 </p>
 
-This integration provides information about next departures for different public transport types like Bus, Subway, Tram etc.
+This integration provides real-time information on upcoming departures across various public transport modes, including buses, subways, trams, and more.
 
 ***
 
-## API Endpoints
-The `Public Transport Departures` integration uses [EFA (Elektronische Fahrplanauskunft)](https://de.wikipedia.org/wiki/Elektronische_Fahrplanauskunft) endpoints as data source. This endpoints are maintained by different federal states (Bundesländern) and/or municipalities.
+## Data source
+The `Public Transport Departures` uses [Transitous](https://transitous.org/) as data source.
 
-### Supported EFA endpoints
-There is a list of known endpoints (will be updated continuously with each release)
+## Supported countries
+With the latest version (> 3.0.0) of ha-departures, the integration now supports public transport departure information across a wide range of countries worldwide, thanks to the integration of the [Transitous API](https://api.transitous.org/).
 
-> [!IMPORTANT]
-> If more EFA endpoints are known to you, please write me a short messge or create a new issue and provide API URL. After a check I will add them to supported API's.
+Users can access departure data from transit systems in the following regions:
 
-<table>
-  <tr>
-      <th>Name</th>
-      <th>Supports real time</th>
-    </tr>
-  <tr><td colspan="2" style="background:#5D8736" align="center"><b>General</b></td></tr>
-  <tr>
-    <td><a href="https://www.efa.de/efa/">General EFA</a></td>
-    <td align="center">No</td>
-  </tr>
-  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Baden-Württemberg</b></td></tr>
-  <tr>
-    <td><a href="https://efa.vagfr.de/vagfr3/">Freiburger Verkehrs AG (VAG)</a></td>
-    <td align="center">To check</td>
-  </tr>
-  <tr>
-    <td><a href="https://www.ding.eu/ding/">Donau-Iller-Nahverkehrsverbund (DING)</a></td>
-    <td align="center">YES</td>
-  </tr>
-  <tr>
-    <td><a href="https://www.efa-bw.de/bvb3/">Nahverkehrsgesellschaft Baden-Württemberg (nvbw)</a></td>
-    <td align="center">To check</td>
-  </tr>
-  <tr>
-    <td><a href="https://www.vrn.de/mngvrn/">Verkehrsverbund Rhein-Neckar (VRN)</a></td>
-    <td align="center">To check</td>
-  </tr>
-  <tr>
-    <td><a href="https://www3.vvs.de/mngvvs/">Verkehrs- und Tarifverbund Stuttgart (VVS)</a></td>
-    <td align="center">To check</td>
-  </tr>
-  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Bayern</b></td></tr>
-  <tr>
-    <td><a href="https://bahnland-bayern.de/efa/">MoBY (Bahnland Bayern)</a></td>
-    <td align="center">Yes</td>
-  </tr>
-  <tr>
-    <td><a href="https://efa.rvv.de/efa/">Regensburger Verkehrsverbund (RVV)</a></td>
-    <td align="center">No</td>
-  </tr>
-  <tr>
-    <td><a href="https://efa.vgn.de/vgnExt_oeffi/">Verkehrsverbund Großraum Nürnberg (VGN)</a></td>
-    <td align="center">No</td>
-  </tr>
-  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Mecklenburg-Vorpommern</b></td></tr>
-  <tr>
-    <td><a href="https://fahrplanauskunft-mv.de/vmv-efa/">Verkehrsgesellschaft Mecklenburg-Vorpommern mbH (VMV)</a></td>
-    <td align="center">To check</td>
-  </tr>
-  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Niedersachsen</b></td></tr>
-  <tr>
-    <td><a href="https://bsvg.efa.de/vrbstd_relaunch/">Vehrkehrsverbund Region Braunschweig (VRB)</a></td>
-    <td align="center">To check</td>
-  </tr>
-  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Nordrhein-Westfalen</b></td></tr>
-  <tr>
-    <td><a href="https://avv.efa.de/efa/">Aachener Verkehrsverbund</a></td>
-    <td align="center">No</td>
-  </tr>
-  <tr>
-    <td><a href="https://www.westfalenfahrplan.de/nwl-efa/">Der WestfalenTarif</a></td>
-    <td align="center">To check</td>
-  </tr>
-  <tr>
-    <td><a href="https://www.vrr.de/vrr-efa/">Verkehrsverbund Rhein-Ruhr (VRR)</a></td>
-    <td align="center">Yes</td>
-  </tr>
-  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Rheinland-Pfalz</b></td></tr>
-  <tr>
-    <td><a href="https://mandanten.vrn.de/takt2/">Rolph.de</a></td>
-    <td align="center">To check</td>
-  </tr>
-  <tr><td colspan="2" style="background:#5D8736" align="center"><b>Sachsen</b></td></tr>
-  <tr>
-    <td><a href="https://efa.vvo-online.de/std3/">Der Verkehrsverbund Oberelbe/Mittelsachsen (VVO/VMS)</a></td>
-    <td align="center">Yes</td>
-  </tr>
-</table>
-
+<details>
+<summary>Countries</summary>
+<ul>
+<li>Albania</li>
+<li>Australia</li>
+<li>Austria</li>
+<li>Belgium</li>
+<li>Bermuda</li>
+<li>Bosnia and Herzegovina</li>
+<li>Brazil</li>
+<li>Bulgaria</li>
+<li>Canada</li>
+<li>Chile</li>
+<li>Colombia</li>
+<li>Croatia</li>
+<li>Cyprus</li>
+<li>Czechia</li>
+<li>Denmark</li>
+<li>Egypt</li>
+<li>Estonia</li>
+<li>Ethiopia</li>
+<li>Finland</li>
+<li>France</li>
+<li>Germany</li>
+<li>Greece</li>
+<li>Hong Kong</li>
+<li>Hungary</li>
+<li>Iceland</li>
+<li>India</li>
+<li>Indonesia</li>
+<li>Ireland</li>
+<li>Israel</li>
+<li>Italy</li>
+<li>Japan</li>
+<li>Korea</li>
+<li>Kosovo</li>
+<li>Latvia</li>
+<li>Liechtenstein</li>
+<li>Lithuania</li>
+<li>Luxembourg</li>
+<li>Malaysia</li>
+<li>Mexico</li>
+<li>Moldova</li>
+<li>Monaco</li>
+<li>Montenegro</li>
+<li>Netherlands</li>
+<li>New Zealand</li>
+<li>North Macedonia</li>
+<li>Norway</li>
+<li>Oman</li>
+<li>Poland</li>
+<li>Portugal</li>
+<li>Puerto Rico</li>
+<li>Romania</li>
+<li>Serbia</li>
+<li>Singapore</li>
+<li>Slovakia</li>
+<li>Slovenia</li>
+<li>Spain</li>
+<li>Sweden</li>
+<li>Switzerland</li>
+<li>Thailand</li>
+<li>Türkiye</li>
+<li>Ukraine</li>
+<li>United Arab Emirates</li>
+<li>United Kingdom</li>
+<li>United States</li>
+</ul>
+</details>
 
 ## Installation
 
@@ -124,44 +113,42 @@ The configuration of integration is made via Home Assistant GUI
 3. Search for `Public Transport Departures`
 4. Click on integration to start [configuration dialog](#Configure-a-new-station)
 
-### Configure a new station
+### Configure a hub configuration
 
-#### Step 1 - Choose the [API endpoint](#supported-efa-endpoints) and enter stop name
+#### Step 1 - Choose a location and radius to search
 
-![image](assets/setup-step-1-api.png)
+![image](assets/setup-step-1.png)
 
-#### Step 2 - Choose stop
-> In this step `ha-departures` integration will search for all locations matching provided stop name.
-> Please select one of them from the list
+#### Step 2 - Choose a stop
+> Please select one stop location from the list
 
-![image](assets/setup-step-2-stop-name.png)
+![image](assets/setup-step-2.png)
 
 #### Step 3 - Choose the connections
-> You will get list of connections provided by the API for selected stop
-> Select all connection(s) you are interesting in and click on `OK`
+> You will get list of connections provided by the API for selected stop.
+> Select all connection(s) you are interesting in and click on `Submit`
 
-![image](assets/setup-step-3-routes.png)
+![image](assets/setup-step-3.png)
 
-#### Step 4 - Define name for new hub
-Choose a name for your new hub
+#### Step 4 - Define a name of new hub configuration
+Choose a name for your new hub configuration
 
 > [!WARNING]
-> No duplicate names are allowed!
+> Duplicate names to existing hubs are not allowed!
 
-![image](assets/setup-step-4-hub-name.png)
+![image](assets/setup-step-4.png)
 
-After `submit` a new `Hub` will be created incl. new sensor(s) for each connection you selected in previous step:
+After `Submit` a new `Hub` will be created incl. new sensor(s) for each connection you selected in previous step:
 
-![image](assets/setup-step-4-hub.png)
+![image](assets/setup-step-5.png)
 
-![image](https://github.com/user-attachments/assets/7a54e888-df7f-4098-a644-f93279f043d7)
-
-### Reconfigure an entry
+## Reconfigure an entry
 You can any time add or remove connections to existing `hub's` (stop locations)
 
 ![image](assets/setup-step-reconfig.png)
 
-Just click on :gear: icon, select or deselct the connections and click on `OK`, Integration will remove obsolete and add new connections to the integration.
+Just click on :gear: icon, select or deselct the connections and click on `Submit`, Integration will add new connections to the integration.
+The status of removed connections will be changed to `not provided`.
 
 ## Usage in dashboard
 

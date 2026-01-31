@@ -1,57 +1,61 @@
 {
   "config": {
-    "step": {
-      "user": {
-        "title": "Public Transport Departures",
-        "description": "Bitte API Endpoint und Haltestellenname eingeben:",
-        "data": {
-          "endpoint": "Endpoint",
-          "stop_name": "Haltestellenname"
-        }
+      "step": {
+          "user": {
+              "data": {
+                  "location": "Bitte wählen Sie einen Standort und einen Suchradius aus, um Haltestellen zu finden"
+              },
+              "data_description": {
+              }
+          },
+          "stop": {
+              "data": {
+                  "stop_name": "Name der Haltestelle"
+              },
+              "data_description": {
+                  "stop_name": "Bitte wählen Sie eine Haltestelle aus"
+              }
+          },
+          "lines": {
+              "data": {
+                  "lines": "Linien"
+              },
+              "data_description": {
+                  "lines": "Bitte wählen Sie Linien aus"
+              }
+          },
+          "hubname": {
+              "data": {
+                  "hub_name": "Hub-Name"
+              },
+              "data_description": {
+                  "hub_name": "Bitte geben Sie den Namen des neuen Konfigurations-Hubs ein"
+              }
+          }
       },
-      "stop": {
-        "title": "Public Transport Departures",
-        "description": "Wählen Sie die gewünschte Haltestelle aus:",
-        "data": {
-          "stop_name": "Haltestelle"
-        }
+      "error": {
+          "no_stop_found": "Keine Haltestellen gefunden.",
+          "invalid_api_response": "Ungültige Antwort vom Server erhalten.",
+          "connection_failed": "Verbindung zum Server fehlgeschlagen. Bitte versuchen Sie es später erneut.",
+          "no_line_selected": "Bitte wählen Sie mindestens eine Linie aus."
       },
-      "lines": {
-        "title": "Public Transport Departures",
-        "description": "Bitte die Verbindungen auswählen, die überwacht werden:",
-        "data": {
-          "lines": "Verbindungen"
-        }
-      },
-      "hubname": {
-        "title": "Public Transport Departures",
-        "description": "Bitte einen Namen für die Konfiguration eingeben:",
-        "data": {
-          "hub_name": "Name der Konfiguration"
-        }
+      "abort": {
+          "already_configured": "Diese Haltestelle ist bereits konfiguriert"
       }
-    },
-    "error": {
-      "no_stop_found": "Keine zutreffende Haltestelle gefunden",
-      "invalid_api_response": "EFA Endpoint ungültige Antwort",
-      "connection_failed": "Verbindung zu EFA Endpoint fehlgeschlagen. Versuchen Sie später nochmal."
-    },
-    "abort": {
-      "already_configured": "Diese Konfiguration ist bereits eingerichtet."
-    }
   },
   "options": {
-    "step": {
-      "init": {
-          "title": "Public Transport Departures",
-          "description": "Bitte die Verbindungen auswählen, die überwacht werden:",
-          "data": {
-            "lines": "Verbindungen"
+      "step": {
+          "init": {
+              "data": {
+                  "lines": "Linien"
+              },
+              "data_description": {
+                  "lines": "Linien auswählen"
+              }
           }
+      },
+      "abort": {
+          "no_changes_configured": "Keine Änderungen konfiguriert"
       }
-    },
-    "abort":{
-      "no_changes_configured": "Keine Änderungen konfiguriert"
-    }
   }
 }
