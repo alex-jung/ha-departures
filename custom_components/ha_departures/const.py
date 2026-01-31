@@ -4,18 +4,19 @@ from typing import Final
 
 NAME = "Public Transport Departures"
 DOMAIN = "ha_departures"
-DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "2.2.2"
+VERSION = "3.0.0"
 
-REPO_URL = "https://github.com/alex-jung/ha-departures"
-ISSUE_URL = f"{REPO_URL}/issues"
-API_URL = "https://api.transitous.org/api"
+# Github URLs
+GITHUB_REPO_URL = "https://github.com/alex-jung/ha-departures"
+GITHUB_ISSUE_URL = f"{GITHUB_REPO_URL}/issues"
 
-HEADER_JSON: Final = "application/json"
-
-# Platforms
-SENSOR = "sensor"
-PLATFORMS = [SENSOR]
+# Motis API constants
+PROVIDER_URL = "https://transitous.org/"
+REQUEST_API_URL = "https://api.transitous.org/api"
+REQUEST_HEADER_JSON: Final = "application/json"
+REQUEST_TIMEOUT: Final = 10  # seconds
+REQUEST_RETRIES: Final = 3  # number of retries for failed requests
+REQUEST_TIMES_PER_LINE_COUNT: Final = 20  # number of departure times to fetch per line
 
 # Configuration and options
 CONF_STOP_NAME = "stop_name"
@@ -39,49 +40,11 @@ ATTR_DIRECTION: Final = "direction"
 ATTR_DIRECTION_TEXT: Final = "direction_text"
 ATTR_DEPARTURES: Final = "departures"
 ATTR_PROVIDER_URL: Final = "data_provider"
-ATTR_PLANNED_DEPARTURE_TIME: Final = "planned_departure_time"
-ATTR_PLANNED_DEPARTURE_TIME_1: Final = "planned_departure_time_1"
-ATTR_PLANNED_DEPARTURE_TIME_2: Final = "planned_departure_time_2"
-ATTR_PLANNED_DEPARTURE_TIME_3: Final = "planned_departure_time_3"
-ATTR_PLANNED_DEPARTURE_TIME_4: Final = "planned_departure_time_4"
-ATTR_ESTIMATED_DEPARTURE_TIME: Final = "estimated_departure_time"
-ATTR_ESTIMATED_DEPARTURE_TIME_1: Final = "estimated_departure_time_1"
-ATTR_ESTIMATED_DEPARTURE_TIME_2: Final = "estimated_departure_time_2"
-ATTR_ESTIMATED_DEPARTURE_TIME_3: Final = "estimated_departure_time_3"
-ATTR_ESTIMATED_DEPARTURE_TIME_4: Final = "estimated_departure_time_4"
+ATTR_TIMES: Final = "times"
+ATTR_PLANNED_DEPARTURE_TIME: Final = "planned"
+ATTR_ESTIMATED_DEPARTURE_TIME: Final = "estimated"
 
-
-# Endpoints
-EFA_ENDPOINTS: Final = {
-    # General EFA endpoint
-    "General EFA": "https://www.efa.de/efa/",
-    # Baden-Württemberg
-    "Freiburger Verkehrs AG (VAG)": "https://efa.vagfr.de/vagfr3/",
-    "Donau-Iller-Nahverkehrsverbund (DING)": "https://www.ding.eu/ding/",
-    "Nahverkehrsgesellschaft Baden-Württemberg (nvbw)": "https://www.efa-bw.de/bvb3/",
-    "Verkehrsverbund Rhein-Neckar (VRN)": "https://www.vrn.de/mngvrn/",
-    "Verkehrs- und Tarifverbund Stuttgart (VVS)": "https://www3.vvs.de/mngvvs/",
-    # Bayern
-    "MoBY (Bahnland Bayern)": "https://bahnland-bayern.de/efa/",
-    "Regensburger Verkehrsverbund (RVV)": "https://efa.rvv.de/efa/",
-    "Verkehrsverbund Großraum Nürnberg (VGN)": "https://efa.vgn.de/vgnExt_oeffi/",
-    # Mecklenburg-Vorpommern
-    "Verkehrsgesellschaft Mecklenburg-Vorpommern mbH (VMV)": "https://fahrplanauskunft-mv.de/vmv-efa/",
-    # Nordrhein-Westfalen
-    "Der WestfalenTarif": "https://www.westfalenfahrplan.de/nwl-efa/",
-    "Verkehrsverbund Rhein-Ruhr (VRR)": "https://www.vrr.de/vrr-efa/",
-    "Aachener Verkehrsverbund (AVV)": "https://avv.efa.de/efa/",
-    # Rheinland-Pfalz
-    "Rolph.de": "https://mandanten.vrn.de/takt2/",
-    # Sachsen
-    "Der Verkehrsverbund Oberelbe/Mittelsachsen (VVO/VMS)": "https://efa.vvo-online.de/std3/",
-    # Niedersachsen
-    "Vehrkehrsverbund Region Braunschweig (VRB)": "https://bsvg.efa.de/vrbstd_relaunch/",
-}
-
-
-# Defaults
-DEFAULT_NAME = DOMAIN
+DEPARTURES_PER_SENSOR_LIMIT: Final = 20  # max number of departures per sensor
 
 
 STARTUP_MESSAGE = f"""
@@ -89,6 +52,6 @@ STARTUP_MESSAGE = f"""
 {NAME}
 Version: {VERSION}
 If you have any issues with this you need to open an issue here:
-{ISSUE_URL}
+{GITHUB_ISSUE_URL}
 -------------------------------------------------------------------
 """

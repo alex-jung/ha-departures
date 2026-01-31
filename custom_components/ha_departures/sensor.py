@@ -1,112 +1,108 @@
 """Sensor platform for Public Transport Departures."""
 
 import logging
-from datetime import datetime
 
-from apyefa import Departure, Line, TransportType
 from homeassistant import config_entries, core
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import ATTR_LATITUDE, ATTR_LONGITUDE
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from slugify import slugify
 
-from . import DeparturesDataUpdateCoordinator
+from .api.data_classes import Line, TransportMode
 from .const import (
     ATTR_DIRECTION,
     ATTR_ESTIMATED_DEPARTURE_TIME,
-    ATTR_ESTIMATED_DEPARTURE_TIME_1,
-    ATTR_ESTIMATED_DEPARTURE_TIME_2,
-    ATTR_ESTIMATED_DEPARTURE_TIME_3,
-    ATTR_ESTIMATED_DEPARTURE_TIME_4,
     ATTR_LINE_ID,
     ATTR_LINE_NAME,
     ATTR_PLANNED_DEPARTURE_TIME,
-    ATTR_PLANNED_DEPARTURE_TIME_1,
-    ATTR_PLANNED_DEPARTURE_TIME_2,
-    ATTR_PLANNED_DEPARTURE_TIME_3,
-    ATTR_PLANNED_DEPARTURE_TIME_4,
     ATTR_PROVIDER_URL,
+    ATTR_TIMES,
     ATTR_TRANSPORT_TYPE,
+    DEPARTURES_PER_SENSOR_LIMIT,
+    PROVIDER_URL,
 )
-from .helper import (
-    UnstableDepartureTime,
-    create_unique_id,
-    filter_by_line_id,
-    filter_identical_departures,
-    replace_year_in_id,
-)
+from .coordinator import DeparturesDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
     hass: core.HomeAssistant, entry: config_entries.ConfigEntry, async_add_entities
 ):
     """Set up Departures entries."""
-    coordinator = entry.runtime_data
+    coordinator: DeparturesDataUpdateCoordinator = entry.runtime_data.coordinator
 
     async_add_entities(
-        [DeparturesSensor(hass, coordinator, line) for line in coordinator.lines],
+        [
+            DeparturesSensor(
+                hass,
+                coordinator,
+                line,
+            )
+            for line in coordinator.lines
+        ],
         update_before_add=True,
     )
 
 
-class DeparturesSensor(CoordinatorEntity, SensorEntity):
+class DeparturesSensor(
+    CoordinatorEntity[DeparturesDataUpdateCoordinator], SensorEntity
+):
     """ha_departures Sensor class."""
 
     def __init__(
         self,
         hass: core.HomeAssistant,
         coordinator: DeparturesDataUpdateCoordinator,
-        line: Line,
+        line: dict,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
 
+        _LOGGER.info("Create sensor instance for line: %s", line)
+
         self._hass = hass
-        self._transport = line.product
-        self._line = line.name
-        self._line_id = line.id
-        self._destination = line.destination
+
+        line_obj = Line.from_dict(line)
+
+        self._transport = line_obj.mode
+        self._route_name = line_obj.route_short_name
+        self._route_id = line_obj.route_id
+        self._destination = line_obj.head_sign
+        self._direction_id = line_obj.direction_id
+
+        self._times = []
         self._value = None
-        self._times = [
-            UnstableDepartureTime(
-                ATTR_PLANNED_DEPARTURE_TIME, ATTR_ESTIMATED_DEPARTURE_TIME
-            ),
-            UnstableDepartureTime(
-                ATTR_PLANNED_DEPARTURE_TIME_1, ATTR_ESTIMATED_DEPARTURE_TIME_1
-            ),
-            UnstableDepartureTime(
-                ATTR_PLANNED_DEPARTURE_TIME_2, ATTR_ESTIMATED_DEPARTURE_TIME_2
-            ),
-            UnstableDepartureTime(
-                ATTR_PLANNED_DEPARTURE_TIME_3, ATTR_ESTIMATED_DEPARTURE_TIME_3
-            ),
-            UnstableDepartureTime(
-                ATTR_PLANNED_DEPARTURE_TIME_4, ATTR_ESTIMATED_DEPARTURE_TIME_4
-            ),
-        ]
 
         self._attr_name = (
-            f"{coordinator.stop_name}-{self._line}-{self._destination.name}"
+            f"{coordinator.hub_name}-{self._route_name}-{self._destination}"
         )
-        self._attr_unique_id = create_unique_id(line, coordinator.hub_name)
+        self._attr_unique_id = f"{slugify(coordinator.hub_name)}-{self._route_id}-{self._direction_id}-{slugify(self._destination)}"
 
         self._attr_extra_state_attributes = {
-            ATTR_LINE_NAME: self._line,
-            ATTR_LINE_ID: replace_year_in_id(self._line_id, False),
-            ATTR_TRANSPORT_TYPE: self._transport.name,
-            ATTR_DIRECTION: line.destination.name,
-            ATTR_PROVIDER_URL: coordinator.api_url,
-            ATTR_PLANNED_DEPARTURE_TIME: None,
+            ATTR_LINE_NAME: self._route_name,
+            ATTR_LINE_ID: self._route_id,
+            ATTR_TRANSPORT_TYPE: self._transport.value,
+            ATTR_DIRECTION: line_obj.head_sign,
+            ATTR_PROVIDER_URL: PROVIDER_URL,
             ATTR_LATITUDE: (
                 coordinator.stop_coord[0] if coordinator.stop_coord else None
             ),
             ATTR_LONGITUDE: (
                 coordinator.stop_coord[1] if coordinator.stop_coord else None
             ),
+            ATTR_TIMES: self._times,
         }
 
         _LOGGER.debug('ha-departures sensor "%s" created', self.unique_id)
+        _LOGGER.debug(">> Transport type: %s", self._transport)
+        _LOGGER.debug(">> Route name: %s", self._route_name)
+        _LOGGER.debug(">> Route ID: %s", self._route_id)
+        _LOGGER.debug(">> Destination: %s", self._destination)
+        _LOGGER.debug(">> Direction ID: %s", self._direction_id)
+        _LOGGER.debug(">> Stop IDs: %s", coordinator.stop_ids)
 
     @property
     def native_value(self):
@@ -117,20 +113,36 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
     def icon(self) -> str:
         """Icon of the entity, based on transport type."""
         match self._transport:
+            case TransportMode.BIKE:
+                return "mdi:bike"
+            case TransportMode.RENTAL:
+                return "mdi:car-key"
+            case TransportMode.CAR:
+                return "mdi:car"
+            case TransportMode.FLEX:
+                return "mdi:bus-clock"
+            case TransportMode.TRANSIT:
+                return "mdi:bus-transfer"
+            case TransportMode.FERRY:
+                return "mdi:ferry"
+            case TransportMode.AIRPLANE:
+                return "mdi:airplane"
             case (
-                TransportType.CITY_BUS
-                | TransportType.REGIONAL_BUS
-                | TransportType.EXPRESS_BUS
+                TransportMode.RAIL
+                | TransportMode.HIGHSPEED_RAIL
+                | TransportMode.LONG_DISTANCE
+                | TransportMode.NIGHT_RAIL
+                | TransportMode.REGIONAL_FAST_RAIL
+                | TransportMode.REGIONAL_RAIL
+                | TransportMode.SUBURBAN
             ):
-                return "mdi:bus"
-            case TransportType.TRAM:
-                return "mdi:tram"
-            case TransportType.SUBWAY:
-                return "mdi:subway"
-            case TransportType.AST:
-                return "mdi:taxi"
-            case TransportType.SUBURBAN | TransportType.TRAIN | TransportType.CITY_RAIL:
                 return "mdi:train"
+            case TransportMode.BUS:
+                return "mdi:bus"
+            case TransportMode.TRAM:
+                return "mdi:tram"
+            case TransportMode.SUBWAY | TransportMode.METRO:
+                return "mdi:subway"
             case _:
                 return "mdi:train-bus"
 
@@ -138,83 +150,50 @@ class DeparturesSensor(CoordinatorEntity, SensorEntity):
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
 
-        debug_title = f" Update '{self._line}' -> '{self._destination.name}' "
+        debug_title = f" Update '{self._route_name}' -> '{self._destination}' "
 
         _LOGGER.debug(debug_title.center(70, "="))
         _LOGGER.debug(">> Unique ID: %s", self.unique_id)
 
-        departures: list[Departure] = []
-
-        _LOGGER.debug(
-            ">> Before line id filtering: %s departures", len(self.coordinator.data)
+        departures = list(
+            filter(
+                lambda d: d.route_id == self._route_id
+                and d.direction_id == self._direction_id,
+                self.coordinator.data,
+            )
         )
-        departures = filter_by_line_id(self.coordinator.data, self._line_id)
 
-        _LOGGER.debug(
-            ">> Before identical departures filtering: %s departures",
-            len(departures),
-        )
-        departures = filter_identical_departures(departures)
-
-        _LOGGER.debug(">> After all filters: %s departures", len(departures))
+        _LOGGER.debug(">> Departures found: %s", len(departures))
 
         if not departures:
-            _LOGGER.debug(">> No departures found")
-            self.clear_times()
+            self._attr_extra_state_attributes.update({ATTR_TIMES: []})
+            self.async_write_ha_state()
 
             return
 
-        self._update_times(departures)
+        departures = departures[:DEPARTURES_PER_SENSOR_LIMIT]
 
-        self._value = self._calculate_datetime(departures[0])
-
-        self.async_write_ha_state()
-
-    def clear_times(self):
-        """Clear all times."""
-        for t in self._times:
-            t.clear()
-
-        self._value = None
+        for departure in departures:
+            _LOGGER.debug(
+                ">> Departure: Planned: %s | Estimated: %s",
+                departure.scheduled_departure,
+                departure.departure,
+            )
 
         self._attr_extra_state_attributes.update(
             {
-                ATTR_PLANNED_DEPARTURE_TIME: None,
-                ATTR_ESTIMATED_DEPARTURE_TIME: None,
-                ATTR_PLANNED_DEPARTURE_TIME_1: None,
-                ATTR_ESTIMATED_DEPARTURE_TIME_1: None,
-                ATTR_PLANNED_DEPARTURE_TIME_2: None,
-                ATTR_ESTIMATED_DEPARTURE_TIME_2: None,
-                ATTR_PLANNED_DEPARTURE_TIME_3: None,
-                ATTR_ESTIMATED_DEPARTURE_TIME_3: None,
-                ATTR_PLANNED_DEPARTURE_TIME_4: None,
-                ATTR_ESTIMATED_DEPARTURE_TIME_4: None,
+                ATTR_TIMES: [
+                    {
+                        ATTR_PLANNED_DEPARTURE_TIME: d.scheduled_departure,
+                        ATTR_ESTIMATED_DEPARTURE_TIME: d.departure,
+                    }
+                    for d in departures
+                ]
             }
         )
 
-    def _update_times(self, departures: list[Departure]):
-        for i, time in enumerate(self._times):
-            planned_time = departures[i].planned_time if i < len(departures) else None
-            estimated_time = (
-                departures[i].estimated_time if i < len(departures) else None
-            )
+        self._value = departures[0].scheduled_departure
 
-            _LOGGER.debug(
-                ">> [%s]: %s -> %s",
-                i,
-                planned_time,
-                estimated_time,
-            )
+        self.async_write_ha_state()
 
-            time.update(departures[i] if i < len(departures) else None)
-            self._attr_extra_state_attributes.update(time.to_dict())
-
-    def _calculate_datetime(self, departure: Departure) -> datetime | None:
-        if not departure or not isinstance(departure, Departure):
-            return None
-
-        return (
-            departure.estimated_time
-            if departure.estimated_time
-            else departure.planned_time
-        )
+        _LOGGER.debug("<< Sensor updated")
