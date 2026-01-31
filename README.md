@@ -15,7 +15,7 @@ This integration provides real-time information on upcoming departures across va
 The `Public Transport Departures` uses [Transitous](https://transitous.org/) as data source.
 
 ## Supported countries
-With the latest version (> 3.0.0) of ha-departures, the integration now supports public transport departure information across a wide range of countries worldwide, thanks to the integration of the [Transitous API](https://api.transitous.org/).
+With the latest version (>= 3.0.0) of ha-departures, the integration now supports public transport departure information across a wide range of countries worldwide, thanks to the integration of the [Transitous API](https://api.transitous.org/).
 
 Users can access departure data from transit systems in the following regions:
 
