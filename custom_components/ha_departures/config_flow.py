@@ -112,6 +112,10 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 self._all_stops = [Stop.from_dict(item) for item in data]
                 _LOGGER.debug("%s stop(s) found", len(self._all_stops))
 
+                self._all_stops = list(
+                    filter(lambda x: x.name != "unknown", self._all_stops)
+                )
+
                 for stop in self._all_stops:
                     _LOGGER.info(
                         "> %s(%s)",
@@ -244,7 +248,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     ApiCommand.STOP_TIMES,
                     {
                         "stopId": str(stop.id),
-                        "n": str(20),
+                        "n": str(1000),
                     },
                 )
             except ValueError as err:
@@ -275,7 +279,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         line_list: list[SelectOptionDict] = [
             SelectOptionDict(
-                label=f"{line.route_short_name} - {line.head_sign}",
+                label=f"{line.mode.capitalize()} {line.route_short_name} - {line.head_sign}",
                 value=f"{line.route_id}---{line.direction_id}",
             )
             for line in self._lines

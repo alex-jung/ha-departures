@@ -15,6 +15,7 @@ from .const import (
     CONF_STOP_COORD,
     CONF_STOP_IDS,
     DOMAIN,
+    RADIUS_FOR_STOPS_REQUEST,
     REQUEST_API_URL,
     REQUEST_RETRIES,
     REQUEST_TIMEOUT,
@@ -96,37 +97,41 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
 
         data: list[Departure] = []
 
-        for stop_id in self._stop_ids:
-            PARAMS = {
-                "stopId": stop_id,
-                "n": str(REQUEST_TIMES_PER_LINE_COUNT * self.lines),
-            }
+        # Take only first stop_id and use "radius" parameter
+        # to decrease amount of requests to the server
+        stop_id = self._stop_ids[0]
 
-            _LOGGER.debug(
-                "Fetching stop times for stop_id: %s with params: %s", stop_id, PARAMS
-            )
+        PARAMS = {
+            "stopId": stop_id,
+            "n": str(REQUEST_TIMES_PER_LINE_COUNT * self.lines),
+            "radius": str(RADIUS_FOR_STOPS_REQUEST),
+        }
 
-            times = await self._client.get(
-                COMMAND, params=PARAMS, retry=REQUEST_RETRIES, timeout=REQUEST_TIMEOUT
-            )
+        _LOGGER.debug(
+            "Fetching stop times for stop_id: %s with params: %s", stop_id, PARAMS
+        )
 
-            _LOGGER.debug(
-                "Received %s stop times for stop_id: %s",
-                len(times.get("stopTimes", [])),
-                stop_id,
-            )
+        times = await self._client.get(
+            COMMAND, params=PARAMS, retry=REQUEST_RETRIES, timeout=REQUEST_TIMEOUT
+        )
 
-            for stop_time in times.get("stopTimes", []):
-                departure = Departure.from_dict(stop_time)
+        _LOGGER.debug(
+            "Received %s stop times for stop_id: %s",
+            len(times.get("stopTimes", [])),
+            stop_id,
+        )
 
-                if departure not in data:  # do not add duplicates
-                    data.append(departure)
+        for stop_time in times.get("stopTimes", []):
+            departure = Departure.from_dict(stop_time)
 
-                    _LOGGER.debug(
-                        "%s: Departure: %s (%s)",
-                        stop_id,
-                        departure.scheduled_departure,
-                        departure.departure,
-                    )
+            if departure not in data and departure.stop_id in self.stop_ids:
+                data.append(departure)
+
+                _LOGGER.debug(
+                    "%s: Departure: %s (%s)",
+                    stop_id,
+                    departure.scheduled_departure,
+                    departure.departure,
+                )
 
         return data

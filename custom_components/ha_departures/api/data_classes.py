@@ -48,6 +48,7 @@ class TransportMode(StrEnum):
     OTHER = "OTHER"
     AREAL_LIFT = "AREAL_LIFT"
     METRO = "METRO"
+    UNKNOWN = "unknown"
 
 
 @dataclass
@@ -63,10 +64,10 @@ class Stop:
     def from_dict(data: dict[str, Any]) -> "Stop":
         """Create a Stop object from a dictionary."""
         return Stop(
-            id=data["stopId"],
-            name=data["name"],
-            latitude=data["lat"],
-            longitude=data["lon"],
+            id=data.get("stopId", "unknown"),
+            name=data.get("name", "unknown"),
+            latitude=data.get("lat", 0.0),
+            longitude=data.get("lon", 0.0),
         )
 
 
@@ -90,17 +91,17 @@ class StopTime:
     def from_dict(data: dict[str, Any]) -> "StopTime":
         """Create a StopTime object from a dictionary."""
         return StopTime(
-            mode=TransportMode(data["mode"]),
-            real_time=data["realTime"],
-            head_sign=data["headsign"],
-            short_name=data["routeShortName"],
-            route_id=data["routeId"],
-            direction=data["directionId"],
-            arrival_time=data["place"]["arrival"],
-            departure_time=data["place"]["departure"],
-            scheduled_arrival_time=data["place"]["scheduledArrival"],
-            scheduled_departure_time=data["place"]["scheduledDeparture"],
-            cancelled=data["cancelled"],
+            mode=TransportMode(data.get("mode", "unknown")),
+            real_time=data.get("realTime", False),
+            head_sign=data.get("headsign", "unknown"),
+            short_name=data.get("routeShortName", "unknown"),
+            route_id=data.get("routeId", "unknown"),
+            direction=data.get("directionId", "unknown"),
+            arrival_time=data.get("place", {}).get("arrival", ""),
+            departure_time=data.get("place", {}).get("departure", ""),
+            scheduled_arrival_time=data.get("place", {}).get("scheduledArrival", ""),
+            scheduled_departure_time=data.get("place", {}).get("scheduledDeparture"),
+            cancelled=data.get("cancelled", False),
         )
 
 
@@ -128,11 +129,11 @@ class Line:
     def from_dict(data: dict[str, Any]) -> "Line":
         """Create a Line object from a dictionary."""
         return Line(
-            route_id=data["route_id"],
-            direction_id=data["direction_id"],
-            head_sign=data["head_sign"],
-            route_short_name=data["route_short_name"],
-            mode=TransportMode(data["transport_mode"]),
+            route_id=data.get("route_id", "unknown"),
+            direction_id=data.get("direction_id", "unknown"),
+            head_sign=data.get("head_sign", "unknown"),
+            route_short_name=data.get("route_short_name", "unknown"),
+            mode=TransportMode(data.get("transport_mode", "unknown")),
         )
 
     def __hash__(self) -> int:
@@ -155,6 +156,7 @@ class Departure:
     route_id: str
     direction_id: str
     trip_id: str
+    stop_id: str
     departure: datetime | None
     scheduled_departure: datetime | None
     real_time: bool
@@ -167,14 +169,23 @@ class Departure:
         scheduled_departure_time = data.get("place", {}).get("scheduledDeparture")
 
         return Departure(
-            route_id=data["routeId"],
-            direction_id=data["directionId"],
-            trip_id=data["tripId"],
+            route_id=data.get("routeId", "unknown"),
+            direction_id=data.get("directionId", "unknown"),
+            trip_id=data.get("tripId", "unknown"),
+            stop_id=data.get("place", {}).get("stopId", "unknown"),
             departure=str_to_datetime(departure_time),
             scheduled_departure=str_to_datetime(scheduled_departure_time),
-            real_time=data["realTime"],
+            real_time=data.get("realTime", False),
         )
 
     def __hash__(self) -> int:
         """Override hash function for Departure class."""
-        return hash((self.route_id, self.direction_id, self.trip_id, self.departure))
+        return hash(
+            (
+                self.route_id,
+                self.direction_id,
+                self.trip_id,
+                self.departure,
+                self.stop_id,
+            )
+        )
