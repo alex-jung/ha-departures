@@ -31,21 +31,6 @@ def str_to_datetime(date: str) -> datetime | None:
         return None
 
 
-# def create_unique_id(line: Line | dict[str, str], hub_name: str) -> str | None:
-#     """Create an unique id for a line."""
-#     if isinstance(line, dict):
-#         line = Line.from_dict(line)
-
-#     if not hub_name:
-#         _LOGGER.warning("Hub name is empty, use 'unknown-hub' instead")
-#         hub_name = "unknown-hub"
-
-#     if isinstance(line, Line):
-#         return f"{slugify(hub_name)}-{replace_year_in_id(line.id)}-{line.product}-{line.destination.id}"
-
-#     raise ValueError(f"Expected dict or Line object, got {type(line)}")
-
-
 def bounding_box(lat, lon, radius_m):
     """Calculate a bounding box around a point given a radius in meters."""
 
