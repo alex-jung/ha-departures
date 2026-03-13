@@ -10,14 +10,18 @@ from slugify import slugify
 
 from .api.data_classes import Line, TransportMode
 from .const import (
+    ATTR_DEPARTURE_ALERTS,
+    ATTR_DEPARTURE_CANCELLED,
     ATTR_DIRECTION,
     ATTR_ESTIMATED_DEPARTURE_TIME,
+    ATTR_HEAD_SIGN,
     ATTR_LINE_ID,
     ATTR_LINE_NAME,
     ATTR_PLANNED_DEPARTURE_TIME,
     ATTR_PROVIDER_URL,
     ATTR_TIMES,
     ATTR_TRANSPORT_TYPE,
+    ATTR_TRIP_ID,
     CONF_LINES,
     DEPARTURES_PER_SENSOR_LIMIT,
     PROVIDER_URL,
@@ -76,6 +80,7 @@ class DeparturesSensor(
 
         self._times = []
         self._value = None
+        self._trip_info = {}
 
         self._attr_name = (
             f"{coordinator.hub_name}-{self._route_name}-{self._destination}"
@@ -187,9 +192,13 @@ class DeparturesSensor(
                     {
                         ATTR_PLANNED_DEPARTURE_TIME: d.scheduled_departure,
                         ATTR_ESTIMATED_DEPARTURE_TIME: d.departure,
+                        ATTR_TRIP_ID: d.trip_id,
+                        ATTR_DEPARTURE_CANCELLED: d.cancelled,
+                        ATTR_HEAD_SIGN: d.head_sign,
+                        ATTR_DEPARTURE_ALERTS: d.alerts or [],
                     }
                     for d in departures
-                ]
+                ],
             }
         )
 

@@ -45,6 +45,10 @@ ATTR_PROVIDER_URL: Final = "data_provider"
 ATTR_TIMES: Final = "times"
 ATTR_PLANNED_DEPARTURE_TIME: Final = "planned"
 ATTR_ESTIMATED_DEPARTURE_TIME: Final = "estimated"
+ATTR_TRIP_ID: Final = "trip_id"
+ATTR_DEPARTURE_CANCELLED: Final = "cancelled"
+ATTR_HEAD_SIGN: Final = "head_sign"
+ATTR_DEPARTURE_ALERTS: Final = "alerts"
 
 DEPARTURES_PER_SENSOR_LIMIT: Final = 20  # max number of departures per sensor
 

@@ -1,6 +1,6 @@
 """Data classes and enums for API classes."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
@@ -14,6 +14,7 @@ class ApiCommand(StrEnum):
     STOPS = "v1/map/stops"
     STOP_TIMES = "v5/stoptimes"
     ONE_TO_ALL = "v1/one-to-all"
+    TRIP_DETAILS = "v5/trip"
     REVERSE_GEOCODE = "v1/reverse-geocode"
 
 
@@ -150,6 +151,27 @@ class Line:
 
 
 @dataclass
+class Alert:
+    """Data class for an alert."""
+
+    # required fields
+    header_text: str
+    description: str
+
+    # optional fields
+    severity_level: str
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "Alert":
+        """Create an Alert object from a dictionary."""
+        return Alert(
+            header_text=data.get("headerText", ""),
+            description=data.get("descriptionText", ""),
+            severity_level=data.get("severityLevel", "UNKNOWN_SEVERITY"),
+        )
+
+
+@dataclass
 class Departure:
     """Data class for a departure."""
 
@@ -158,8 +180,12 @@ class Departure:
     trip_id: str
     stop_id: str
     departure: datetime | None
+    head_sign: str
     scheduled_departure: datetime | None
     real_time: bool
+    cancelled: bool = False
+    trip_cancelled: bool = False
+    alerts: list[Alert] = field(default_factory=list)
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Departure":
@@ -167,6 +193,7 @@ class Departure:
 
         departure_time = data.get("place", {}).get("departure")
         scheduled_departure_time = data.get("place", {}).get("scheduledDeparture")
+        alerts = data.get("place", {}).get("alerts", [])
 
         return Departure(
             route_id=data.get("routeId", "unknown"),
@@ -175,7 +202,11 @@ class Departure:
             stop_id=data.get("place", {}).get("stopId", "unknown"),
             departure=str_to_datetime(departure_time),
             scheduled_departure=str_to_datetime(scheduled_departure_time),
+            head_sign=data.get("headsign", ""),
             real_time=data.get("realTime", False),
+            cancelled=data.get("cancelled", False),
+            trip_cancelled=data.get("tripCancelled", False),
+            alerts=[Alert.from_dict(alert) for alert in alerts],
         )
 
     def __hash__(self) -> int:
