@@ -155,16 +155,20 @@ class DeparturesSensor(
 
         _LOGGER.debug(debug_title.center(70, "="))
         _LOGGER.debug(">> Unique ID: %s", self.unique_id)
+        _LOGGER.debug(">> Route ID: %s", self._route_id)
+        _LOGGER.debug(">> Direction ID: %s", self._direction_id)
 
         departures = list(
             filter(
-                lambda d: d.route_id == self._route_id
-                and d.direction_id == self._direction_id,
+                lambda d: (
+                    d.route_id == self._route_id
+                    and d.direction_id == self._direction_id
+                ),
                 self.coordinator.data,
             )
         )
 
-        _LOGGER.debug(">> Departures found: %s", len(departures))
+        _LOGGER.debug("> Departures found: %s", len(departures))
 
         if not departures:
             self._attr_extra_state_attributes.update({ATTR_TIMES: []})
@@ -177,7 +181,7 @@ class DeparturesSensor(
 
         for departure in departures:
             _LOGGER.debug(
-                ">> Departure: Planned: %s | Estimated: %s",
+                "> Departure: Planned: %s | Estimated: %s",
                 departure.scheduled_departure,
                 departure.departure,
             )

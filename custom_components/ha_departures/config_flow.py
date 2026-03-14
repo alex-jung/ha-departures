@@ -23,6 +23,7 @@ from .const import (
     CONF_AVAILABLE_LINES,
     CONF_ERROR_CONNECTION_FAILED,
     CONF_ERROR_INVALID_RESPONSE,
+    CONF_ERROR_NO_CHANGES_OPTIONS,
     CONF_ERROR_NO_LINE_SELECTED,
     CONF_ERROR_NO_STOP_FOUND,
     CONF_HUB_NAME,
@@ -373,6 +374,37 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
         _LOGGER.debug(' Start "step_init" '.center(60, "-"))
         _LOGGER.debug(">> user input: %s", user_input)
+
+        if user_input is not None:
+            lines_user_choose = user_input.get(CONF_LINES, [])
+
+            lines_new_state: list[Line] = []
+
+            for user_option in lines_user_choose:
+                (route_id, direction_id) = user_option.split("---")
+
+                lines_new_state.append(
+                    next(
+                        filter(
+                            lambda x: (
+                                x.route_id == route_id
+                                and x.direction_id == direction_id
+                            ),
+                            self._lines_available,
+                        )
+                    )
+                )
+
+            if lines_new_state == self._lines_selected:
+                _LOGGER.debug("No changes on entry configuration detected")
+                return self.async_abort(reason=CONF_ERROR_NO_CHANGES_OPTIONS)
+
+            return self.async_create_entry(
+                title="",
+                data={
+                    CONF_LINES: [x.to_dict() for x in lines_new_state],
+                },
+            )
 
         await self._update_available_lines()
 

@@ -122,17 +122,18 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
             stop_id,
         )
 
-        for stop_time in times.get("stopTimes", []):
+        for i, stop_time in enumerate(times.get("stopTimes", [])):
             departure = Departure.from_dict(stop_time)
 
             if departure not in data and departure.stop_id in self.stop_ids:
                 data.append(departure)
 
-                _LOGGER.debug(
-                    "%s: Departure: %s (%s)",
-                    stop_id,
-                    departure.scheduled_departure,
-                    departure.departure,
-                )
+                if i < 5:  # Log only first 5 departures for debugging
+                    _LOGGER.debug(
+                        "%s: Departure: %s (%s)",
+                        stop_id,
+                        departure.scheduled_departure,
+                        departure.departure,
+                    )
 
         return data
