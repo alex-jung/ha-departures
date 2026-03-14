@@ -253,10 +253,9 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 )
             except ValueError as err:
                 _errors[CONF_LOCATION] = str(err)
+                continue
 
-            data = stop_times.get("stopTimes", [])
-
-            for stop_time in data:
+            for stop_time in stop_times.get("stopTimes", []):
                 line = Line(
                     route_id=stop_time.get("routeId"),
                     direction_id=stop_time.get("directionId"),
@@ -353,6 +352,10 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
             ">> config entry: %s(uid=%s)", config_entry.title, config_entry.unique_id
         )
 
+        self._config_entry = config_entry
+        self._stop_ids: list[str] = config_entry.data.get(CONF_STOP_IDS, [])
+        self._api = MotisApi(base_url=REQUEST_API_URL)
+
         self._lines_selected: list[Line] = [
             Line.from_dict(x) for x in config_entry.options.get(CONF_LINES, [])
         ]
@@ -367,6 +370,47 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
         _LOGGER.debug(' Start "step_init" '.center(60, "-"))
         _LOGGER.debug(">> user input: %s", user_input)
+
+        if user_input is None:
+            fresh_lines: list[Line] = []
+
+            for stop_id in self._stop_ids:
+                try:
+                    stop_times = await _send_api_request(
+                        self._api,
+                        ApiCommand.STOP_TIMES,
+                        {"stopId": stop_id, "n": str(1000)},
+                    )
+                    for stop_time in stop_times.get("stopTimes", []):
+                        fresh_lines.append(
+                            Line(
+                                route_id=stop_time.get("routeId"),
+                                direction_id=stop_time.get("directionId"),
+                                head_sign=stop_time.get("headsign"),
+                                route_short_name=stop_time.get("routeShortName"),
+                                mode=TransportMode(stop_time.get("mode")),
+                            )
+                        )
+                except ValueError:
+                    _LOGGER.warning(
+                        "Failed to refresh lines for stop %s, using cached data",
+                        stop_id,
+                    )
+
+            if fresh_lines:
+                self._lines_available = list(set(fresh_lines))
+                self.hass.config_entries.async_update_entry(
+                    self._config_entry,
+                    data={
+                        **self._config_entry.data,
+                        CONF_AVAILABLE_LINES: [
+                            x.to_dict() for x in self._lines_available
+                        ],
+                    },
+                )
+                _LOGGER.debug(
+                    "Refreshed %d available lines from API", len(self._lines_available)
+                )
 
         if user_input is not None:
             lines_user_choose = user_input.get(CONF_LINES, [])

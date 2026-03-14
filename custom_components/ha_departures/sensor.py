@@ -167,6 +167,7 @@ class DeparturesSensor(
         _LOGGER.debug(">> Departures found: %s", len(departures))
 
         if not departures:
+            self._value = None
             self._attr_extra_state_attributes.update({ATTR_TIMES: []})
             self.async_write_ha_state()
 

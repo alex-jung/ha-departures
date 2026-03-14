@@ -6,6 +6,7 @@ from datetime import timedelta
 from aiohttp import ClientResponseError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api.data_classes import ApiCommand, Departure
@@ -51,7 +52,7 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
         self._lines_count: int = len(config_entry.options.get(CONF_LINES, []))
         self._data: list[Departure] = []
 
-        self._client = MotisApi(REQUEST_API_URL)
+        self._client = MotisApi(REQUEST_API_URL, session=async_get_clientsession(hass))
 
     @property
     def stop_coord(self) -> tuple:
