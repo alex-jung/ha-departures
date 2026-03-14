@@ -16,7 +16,7 @@ REQUEST_API_URL: Final = "https://api.transitous.org/api"
 REQUEST_HEADER_JSON: Final = "application/json"
 REQUEST_TIMEOUT: Final = 10  # seconds
 REQUEST_RETRIES: Final = 3  # number of retries for failed requests
-REQUEST_TIMES_PER_LINE_COUNT: Final = 20  # number of departure times to fetch per line
+REQUEST_TIMES_PER_LINE_COUNT: Final = 500  # number of departure times to fetch per line
 UPDATE_INTERVAL: Final = 180  # seconds
 RADIUS_FOR_STOPS_REQUEST = 250  # meters
 

@@ -56,6 +56,26 @@ async def _send_api_request(api: MotisApi, command, params):
     raise ValueError(error)
 
 
+def _extract_lines_from_stop_times(
+    stop_times_data: dict[str, Any], unique: bool = True
+) -> list[Line]:
+    """Extract unique lines from stop times data."""
+    lines: list[Line] = []
+
+    for stop_time in stop_times_data.get("stopTimes", []):
+        line = Line(
+            route_id=stop_time.get("routeId"),
+            direction_id=stop_time.get("directionId"),
+            head_sign=stop_time.get("headsign"),
+            route_short_name=stop_time.get("routeShortName"),
+            mode=TransportMode(stop_time.get("mode")),
+        )
+
+        lines.append(line)
+
+    return list(set(lines)) if unique else lines
+
+
 class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for ha_departures."""
 
@@ -214,8 +234,9 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 selected_lines.append(
                     next(
                         filter(
-                            lambda x: x.route_id == routeId
-                            and x.direction_id == directionId,
+                            lambda x: (
+                                x.route_id == routeId and x.direction_id == directionId
+                            ),
                             self._lines,
                         )
                     )
@@ -251,29 +272,15 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         "n": str(1000),
                     },
                 )
+
+                self._lines.extend(_extract_lines_from_stop_times(stop_times))
             except ValueError as err:
                 _errors[CONF_LOCATION] = str(err)
-
-            data = stop_times.get("stopTimes", [])
-
-            for stop_time in data:
-                line = Line(
-                    route_id=stop_time.get("routeId"),
-                    direction_id=stop_time.get("directionId"),
-                    head_sign=stop_time.get("headsign"),
-                    route_short_name=stop_time.get("routeShortName"),
-                    mode=TransportMode(stop_time.get("mode")),
+                _LOGGER.error(
+                    "Error fetching stop times for stop %s: %s, continuing with next stop if available",
+                    stop.id,
+                    err,
                 )
-
-                _LOGGER.debug(
-                    "Found line: [%s-%s] %s (%s)",
-                    line.mode,
-                    line.head_sign,
-                    line.route_short_name,
-                    line.direction_id,
-                )
-
-                self._lines.append(line)
 
         self._lines = list(set(self._lines))  # remove duplicate lines
 
@@ -379,8 +386,10 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
                 lines_new_state.append(
                     next(
                         filter(
-                            lambda x: x.route_id == route_id
-                            and x.direction_id == direction_id,
+                            lambda x: (
+                                x.route_id == route_id
+                                and x.direction_id == direction_id
+                            ),
                             self._lines_available,
                         )
                     )
@@ -396,6 +405,8 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
                     CONF_LINES: [x.to_dict() for x in lines_new_state],
                 },
             )
+
+        await self._update_available_lines()
 
         options_list: list[SelectOptionDict] = [
             SelectOptionDict(
@@ -425,4 +436,46 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
                     )
                 }
             ),
+        )
+
+    async def _update_available_lines(self):
+        """Update config entry data with new available lines based on fetched stop times."""
+        stop_ids: list[str] = self.config_entry.data.get(CONF_STOP_IDS, [])
+        fetched_available_lines: list[Line] = []
+        api = MotisApi(base_url=REQUEST_API_URL)
+
+        for stop_id in stop_ids:
+            _LOGGER.debug("Fetching stop times for stop: %s", stop_id)
+
+            try:
+                stop_times = await _send_api_request(
+                    api,
+                    ApiCommand.STOP_TIMES,
+                    {
+                        "stopId": str(stop_id),
+                        "n": str(1000),
+                    },
+                )
+
+                fetched_available_lines.extend(
+                    _extract_lines_from_stop_times(stop_times)
+                )
+            except ValueError as err:
+                _LOGGER.error(
+                    "Error fetching stop times for stop %s: %s, continuing with next stop if available",
+                    stop_id,
+                    err,
+                )
+
+        self._lines_available.extend(fetched_available_lines)
+        self._lines_available = list(set(self._lines_available))  # remove duplicates
+
+        _LOGGER.debug("Updating config entry data with (new) available lines")
+
+        self.hass.config_entries.async_update_entry(
+            self.config_entry,
+            data={
+                **self.config_entry.data,
+                CONF_LINES: [x.to_dict() for x in self._lines_available],
+            },
         )
