@@ -76,6 +76,37 @@ def _extract_lines_from_stop_times(
     return list(set(lines)) if unique else lines
 
 
+async def _fetch_lines(stop_ids: list[str | Stop], unique: bool = True) -> list[Line]:
+    """Fetch lines for given stop ids."""
+
+    lines: list[Line] = []
+
+    api = MotisApi(base_url=REQUEST_API_URL)
+
+    for stop_id in stop_ids:
+        _LOGGER.debug("Fetching stop times for stop: %s", stop_id)
+
+        try:
+            stop_times = await _send_api_request(
+                api,
+                ApiCommand.STOP_TIMES,
+                {
+                    "stopId": str(stop_id),
+                    "n": str(1000),
+                },
+            )
+
+            lines.extend(_extract_lines_from_stop_times(stop_times, unique=unique))
+        except ValueError as err:
+            _LOGGER.error(
+                "Error fetching stop times for stop %s: %s, continuing with next stop if available",
+                stop_id,
+                err,
+            )
+
+    return list(set(lines)) if unique else lines
+
+
 class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for ha_departures."""
 
@@ -258,35 +289,11 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
                 return await self.async_step_hubname()
 
-        self._lines = []
-
-        for stop in self._selected_stops:
-            _LOGGER.debug("Fetching stop times for stop: %s", stop.id)
-
-            try:
-                stop_times = await _send_api_request(
-                    self._api,
-                    ApiCommand.STOP_TIMES,
-                    {
-                        "stopId": str(stop.id),
-                        "n": str(1000),
-                    },
-                )
-
-                self._lines.extend(_extract_lines_from_stop_times(stop_times))
-            except ValueError as err:
-                _errors[CONF_LOCATION] = str(err)
-                _LOGGER.error(
-                    "Error fetching stop times for stop %s: %s, continuing with next stop if available",
-                    stop.id,
-                    err,
-                )
-
-        self._lines = list(set(self._lines))  # remove duplicate lines
+        self._lines = await _fetch_lines(self._selected_stops, unique=True)
 
         line_list: list[SelectOptionDict] = [
             SelectOptionDict(
-                label=f"{line.mode.capitalize()} {line.route_short_name} - {line.head_sign}",
+                label=f"{line.route_short_name} - {line.head_sign}",
                 value=f"{line.route_id}---{line.direction_id}",
             )
             for line in self._lines
@@ -406,7 +413,19 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
                 },
             )
 
-        await self._update_available_lines()
+        self._lines_available = await _fetch_lines(
+            self.config_entry.data.get(CONF_STOP_IDS, []), unique=True
+        )
+
+        _LOGGER.debug("Updating config entry data with (new) available lines")
+
+        self.hass.config_entries.async_update_entry(
+            self.config_entry,
+            data={
+                **self.config_entry.data,
+                CONF_LINES: [x.to_dict() for x in self._lines_available],
+            },
+        )
 
         options_list: list[SelectOptionDict] = [
             SelectOptionDict(
@@ -436,46 +455,4 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
                     )
                 }
             ),
-        )
-
-    async def _update_available_lines(self):
-        """Update config entry data with new available lines based on fetched stop times."""
-        stop_ids: list[str] = self.config_entry.data.get(CONF_STOP_IDS, [])
-        fetched_available_lines: list[Line] = []
-        api = MotisApi(base_url=REQUEST_API_URL)
-
-        for stop_id in stop_ids:
-            _LOGGER.debug("Fetching stop times for stop: %s", stop_id)
-
-            try:
-                stop_times = await _send_api_request(
-                    api,
-                    ApiCommand.STOP_TIMES,
-                    {
-                        "stopId": str(stop_id),
-                        "n": str(1000),
-                    },
-                )
-
-                fetched_available_lines.extend(
-                    _extract_lines_from_stop_times(stop_times)
-                )
-            except ValueError as err:
-                _LOGGER.error(
-                    "Error fetching stop times for stop %s: %s, continuing with next stop if available",
-                    stop_id,
-                    err,
-                )
-
-        self._lines_available.extend(fetched_available_lines)
-        self._lines_available = list(set(self._lines_available))  # remove duplicates
-
-        _LOGGER.debug("Updating config entry data with (new) available lines")
-
-        self.hass.config_entries.async_update_entry(
-            self.config_entry,
-            data={
-                **self.config_entry.data,
-                CONF_LINES: [x.to_dict() for x in self._lines_available],
-            },
         )

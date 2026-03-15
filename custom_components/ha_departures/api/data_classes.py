@@ -1,6 +1,6 @@
 """Data classes and enums for API classes."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
@@ -14,6 +14,7 @@ class ApiCommand(StrEnum):
     STOPS = "v1/map/stops"
     STOP_TIMES = "v5/stoptimes"
     ONE_TO_ALL = "v1/one-to-all"
+    TRIP_DETAILS = "v5/trip"
     REVERSE_GEOCODE = "v1/reverse-geocode"
 
 
@@ -69,6 +70,10 @@ class Stop:
             latitude=data.get("lat", 0.0),
             longitude=data.get("lon", 0.0),
         )
+
+    def __str__(self):
+        """Return string representation of Stop object."""
+        return self.id
 
 
 @dataclass
@@ -150,6 +155,111 @@ class Line:
 
 
 @dataclass
+class Alert:
+    """Data class for an alert."""
+
+    # required fields
+    header_text: str
+    description: str
+
+    # optional fields
+    severity_level: str | None = None
+    communication_period: dict[str, datetime] | None = None
+    impact_period: dict[str, datetime] | None = None
+    cause: str | None = None
+    cause_detail: str | None = None
+    effect: str | None = None
+    effect_detail: str | None = None
+    url: str | None = None
+    image_url: str | None = None
+    image_alt_text: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert Alert object to dictionary."""
+        return {
+            "headerText": self.header_text,
+            "descriptionText": self.description,
+            "severityLevel": self.severity_level,
+            "communicationPeriod": (
+                {
+                    "start": (
+                        self.communication_period.get("start").isoformat()
+                        if self.communication_period
+                        and self.communication_period.get("start")
+                        else None
+                    ),
+                    "end": (
+                        self.communication_period.get("end").isoformat()
+                        if self.communication_period
+                        and self.communication_period.get("end")
+                        else None
+                    ),
+                }
+                if self.communication_period
+                else None
+            ),
+            "impactPeriod": (
+                {
+                    "start": (
+                        self.impact_period.get("start").isoformat()
+                        if self.impact_period and self.impact_period.get("start")
+                        else None
+                    ),
+                    "end": (
+                        self.impact_period.get("end").isoformat()
+                        if self.impact_period and self.impact_period.get("end")
+                        else None
+                    ),
+                }
+                if self.impact_period
+                else None
+            ),
+            "cause": self.cause,
+            "causeDetail": self.cause_detail,
+            "effect": self.effect,
+            "effectDetail": self.effect_detail,
+            "url": self.url,
+            "imageUrl": self.image_url,
+            "imageAltText": self.image_alt_text,
+        }
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]) -> "Alert":
+        """Create an Alert object from a dictionary."""
+        communication_period = {
+            "start": str_to_datetime(data.get("communicationPeriod", {}).get("start")),
+            "end": str_to_datetime(data.get("communicationPeriod", {}).get("end")),
+        }
+        impact_period = {
+            "start": str_to_datetime(data.get("impactPeriod", {}).get("start")),
+            "end": str_to_datetime(data.get("impactPeriod", {}).get("end")),
+        }
+
+        cause = data.get("cause")
+        cause_detail = data.get("causeDetail")
+        effect = data.get("effect")
+        effect_detail = data.get("effectDetail")
+        url = data.get("url")
+        image_url = data.get("imageUrl")
+        image_alt_text = data.get("imageAltText")
+
+        return Alert(
+            header_text=data.get("headerText", ""),
+            description=data.get("descriptionText", ""),
+            severity_level=data.get("severityLevel", ""),
+            communication_period=communication_period,
+            impact_period=impact_period,
+            cause=cause,
+            cause_detail=cause_detail,
+            effect=effect,
+            effect_detail=effect_detail,
+            url=url,
+            image_url=image_url,
+            image_alt_text=image_alt_text,
+        )
+
+
+@dataclass
 class Departure:
     """Data class for a departure."""
 
@@ -158,8 +268,12 @@ class Departure:
     trip_id: str
     stop_id: str
     departure: datetime | None
+    head_sign: str
     scheduled_departure: datetime | None
     real_time: bool
+    cancelled: bool = False
+    trip_cancelled: bool = False
+    alerts: list[Alert] = field(default_factory=list)
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Departure":
@@ -167,6 +281,7 @@ class Departure:
 
         departure_time = data.get("place", {}).get("departure")
         scheduled_departure_time = data.get("place", {}).get("scheduledDeparture")
+        alerts = data.get("place", {}).get("alerts", [])
 
         return Departure(
             route_id=data.get("routeId", "unknown"),
@@ -175,7 +290,11 @@ class Departure:
             stop_id=data.get("place", {}).get("stopId", "unknown"),
             departure=str_to_datetime(departure_time),
             scheduled_departure=str_to_datetime(scheduled_departure_time),
+            head_sign=data.get("headsign", ""),
             real_time=data.get("realTime", False),
+            cancelled=data.get("cancelled", False),
+            trip_cancelled=data.get("tripCancelled", False),
+            alerts=[Alert.from_dict(alert) for alert in alerts],
         )
 
     def __hash__(self) -> int:

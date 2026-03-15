@@ -4,7 +4,7 @@ from typing import Final
 
 NAME: Final = "Public Transport Departures"
 DOMAIN: Final = "ha_departures"
-VERSION: Final = "3.0.1"
+VERSION: Final = "3.1.0"
 
 # Github URLs
 GITHUB_REPO_URL: Final = "https://github.com/alex-jung/ha-departures"
@@ -45,6 +45,10 @@ ATTR_PROVIDER_URL: Final = "data_provider"
 ATTR_TIMES: Final = "times"
 ATTR_PLANNED_DEPARTURE_TIME: Final = "planned"
 ATTR_ESTIMATED_DEPARTURE_TIME: Final = "estimated"
+ATTR_TRIP_ID: Final = "trip_id"
+ATTR_DEPARTURE_CANCELLED: Final = "cancelled"
+ATTR_HEAD_SIGN: Final = "head_sign"
+ATTR_DEPARTURE_ALERTS: Final = "alerts"
 
 DEPARTURES_PER_SENSOR_LIMIT: Final = 20  # max number of departures per sensor
 
