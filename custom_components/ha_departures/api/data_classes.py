@@ -71,6 +71,10 @@ class Stop:
             longitude=data.get("lon", 0.0),
         )
 
+    def __str__(self):
+        """Return string representation of Stop object."""
+        return self.id
+
 
 @dataclass
 class StopTime:
@@ -160,14 +164,49 @@ class Alert:
 
     # optional fields
     severity_level: str
+    communication_period: dict[str, datetime] | None = None
+    impact_period: dict[str, datetime] | None = None
+    cause: str | None = None
+    cause_detail: str | None = None
+    effect: str | None = None
+    effect_detail: str | None = None
+    url: str | None = None
+    image_url: str | None = None
+    image_alt_text: str | None = None
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Alert":
         """Create an Alert object from a dictionary."""
+        communication_period = {
+            "start": str_to_datetime(data.get("communicationPeriod", {}).get("start")),
+            "end": str_to_datetime(data.get("communicationPeriod", {}).get("end")),
+        }
+        impact_period = {
+            "start": str_to_datetime(data.get("impactPeriod", {}).get("start")),
+            "end": str_to_datetime(data.get("impactPeriod", {}).get("end")),
+        }
+
+        cause = data.get("cause")
+        cause_detail = data.get("causeDetail")
+        effect = data.get("effect")
+        effect_detail = data.get("effectDetail")
+        url = data.get("url")
+        image_url = data.get("imageUrl")
+        image_alt_text = data.get("imageAltText")
+
         return Alert(
             header_text=data.get("headerText", ""),
             description=data.get("descriptionText", ""),
             severity_level=data.get("severityLevel", "UNKNOWN_SEVERITY"),
+            communication_period=communication_period,
+            impact_period=impact_period,
+            cause=cause,
+            cause_detail=cause_detail,
+            effect=effect,
+            effect_detail=effect_detail,
+            url=url,
+            image_url=image_url,
+            image_alt_text=image_alt_text,
         )
 
 
