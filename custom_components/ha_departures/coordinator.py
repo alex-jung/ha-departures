@@ -96,8 +96,6 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
         """Fetch data from endpoint."""
         COMMAND = ApiCommand.STOP_TIMES
 
-        data: list[Departure] = []
-
         # Take only first stop_id and use "radius" parameter
         # to decrease amount of requests to the server
         stop_id = self._stop_ids[0]
@@ -122,18 +120,16 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
             stop_id,
         )
 
-        for i, stop_time in enumerate(times.get("stopTimes", [])):
+        return await self.hass.async_add_executor_job(self._process_data, times)
+
+    def _process_data(self, api_response: dict) -> list[Departure]:
+        """Process data in a separate thread to avoid blocking the event loop."""
+        departures = []
+
+        for stop_time in api_response.get("stopTimes", []):
             departure = Departure.from_dict(stop_time)
 
-            if departure not in data and departure.stop_id in self.stop_ids:
-                data.append(departure)
+            if departure not in api_response and departure.stop_id in self.stop_ids:
+                departures.append(departure)
 
-                if i < 5:  # Log only first 5 departures for debugging
-                    _LOGGER.debug(
-                        "%s: Departure: %s (%s)",
-                        stop_id,
-                        departure.scheduled_departure,
-                        departure.departure,
-                    )
-
-        return data
+        return departures
