@@ -163,7 +163,7 @@ class Alert:
     description: str
 
     # optional fields
-    severity_level: str
+    severity_level: str | None = None
     communication_period: dict[str, datetime] | None = None
     impact_period: dict[str, datetime] | None = None
     cause: str | None = None
@@ -173,6 +173,55 @@ class Alert:
     url: str | None = None
     image_url: str | None = None
     image_alt_text: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert Alert object to dictionary."""
+        return {
+            "headerText": self.header_text,
+            "descriptionText": self.description,
+            "severityLevel": self.severity_level,
+            "communicationPeriod": (
+                {
+                    "start": (
+                        self.communication_period.get("start").isoformat()
+                        if self.communication_period
+                        and self.communication_period.get("start")
+                        else None
+                    ),
+                    "end": (
+                        self.communication_period.get("end").isoformat()
+                        if self.communication_period
+                        and self.communication_period.get("end")
+                        else None
+                    ),
+                }
+                if self.communication_period
+                else None
+            ),
+            "impactPeriod": (
+                {
+                    "start": (
+                        self.impact_period.get("start").isoformat()
+                        if self.impact_period and self.impact_period.get("start")
+                        else None
+                    ),
+                    "end": (
+                        self.impact_period.get("end").isoformat()
+                        if self.impact_period and self.impact_period.get("end")
+                        else None
+                    ),
+                }
+                if self.impact_period
+                else None
+            ),
+            "cause": self.cause,
+            "causeDetail": self.cause_detail,
+            "effect": self.effect,
+            "effectDetail": self.effect_detail,
+            "url": self.url,
+            "imageUrl": self.image_url,
+            "imageAltText": self.image_alt_text,
+        }
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Alert":
@@ -197,7 +246,7 @@ class Alert:
         return Alert(
             header_text=data.get("headerText", ""),
             description=data.get("descriptionText", ""),
-            severity_level=data.get("severityLevel", "UNKNOWN_SEVERITY"),
+            severity_level=data.get("severityLevel", ""),
             communication_period=communication_period,
             impact_period=impact_period,
             cause=cause,

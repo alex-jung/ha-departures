@@ -200,7 +200,7 @@ class DeparturesSensor(
                         ATTR_TRIP_ID: d.trip_id,
                         ATTR_DEPARTURE_CANCELLED: d.cancelled,
                         ATTR_HEAD_SIGN: d.head_sign,
-                        ATTR_DEPARTURE_ALERTS: d.alerts or [],
+                        ATTR_DEPARTURE_ALERTS: [d.to_dict() for d in departures],
                     }
                     for d in departures
                 ],
