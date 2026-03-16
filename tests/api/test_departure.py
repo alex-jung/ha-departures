@@ -2,11 +2,9 @@
 
 from datetime import datetime
 
-import pytest
 from homeassistant.util import dt as dt_util
 
 from custom_components.ha_departures.api.data_classes import Departure
-
 
 # ---------------------------------------------------------------------------
 # Fixtures / helpers
@@ -167,14 +165,14 @@ def test_from_dict_cancelled_true():
 
 
 def test_from_dict_alerts_false_when_empty():
-    """alerts ist False wenn die API eine leere Liste liefert."""
+    """Alerts ist False wenn die API eine leere Liste liefert."""
     dep = Departure.from_dict(FULL_DICT)
 
     assert dep.alerts is False
 
 
 def test_from_dict_alerts_true_when_non_empty():
-    """alerts ist True wenn die API mindestens einen Alert enthält."""
+    """Alerts ist True wenn die API mindestens einen Alert enthält."""
     data = {**FULL_DICT, "place": {**FULL_DICT["place"], "alerts": [ALERT_STUB]}}
     dep = Departure.from_dict(data)
 
@@ -182,7 +180,7 @@ def test_from_dict_alerts_true_when_non_empty():
 
 
 def test_from_dict_alerts_true_with_multiple():
-    """alerts ist True bei mehreren Alerts."""
+    """Alerts ist True bei mehreren Alerts."""
     data = {
         **FULL_DICT,
         "place": {**FULL_DICT["place"], "alerts": [ALERT_STUB, ALERT_STUB]},
@@ -193,7 +191,7 @@ def test_from_dict_alerts_true_with_multiple():
 
 
 def test_from_dict_alerts_false_when_missing():
-    """alerts ist False wenn der alerts-Key fehlt."""
+    """Alerts ist False wenn der alerts-Key fehlt."""
     dep = Departure.from_dict({})
 
     assert dep.alerts is False
