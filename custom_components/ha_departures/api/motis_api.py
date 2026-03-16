@@ -101,9 +101,12 @@ class MotisApi:
 
         for attempt in range(retry + 1):
             try:
-                session = self.session or ClientSession()
+                if self.session:
+                    return await self.__send_get_request(
+                        url, self.session, headers, _timeout, params
+                    )
 
-                async with session:
+                async with ClientSession() as session:
                     return await self.__send_get_request(
                         url, session, headers, _timeout, params
                     )
