@@ -91,7 +91,7 @@ async def _fetch_lines(stop_ids: list[str | Stop], unique: bool = True) -> list[
                 api,
                 ApiCommand.STOP_TIMES,
                 {
-                    "stopId": str(stop_id),
+                    "stopId": str(stop_id).removesuffix("_G"),
                     "n": str(1000),
                 },
             )
