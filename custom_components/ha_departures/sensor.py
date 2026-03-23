@@ -166,7 +166,7 @@ class DeparturesSensor(
         departures = list(
             filter(
                 lambda d: (
-                    d.route_id == self._route_id
+                    d.route_id.endswith(self._route_id)
                     and d.direction_id == self._direction_id
                 ),
                 self.coordinator.data,
