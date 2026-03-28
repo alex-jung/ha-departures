@@ -4,7 +4,7 @@ from typing import Final
 
 NAME: Final = "Public Transport Departures"
 DOMAIN: Final = "ha_departures"
-VERSION: Final = "3.1.2"
+VERSION: Final = "3.1.3"
 
 # Github URLs
 GITHUB_REPO_URL: Final = "https://github.com/alex-jung/ha-departures"
