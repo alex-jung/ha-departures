@@ -435,16 +435,23 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
             for line in self._lines_available
         ]
 
+        available_values = {
+            f"{line.route_id}---{line.direction_id}"
+            for line in self._lines_available
+        }
+        valid_defaults = [
+            f"{x.route_id}---{x.direction_id}"
+            for x in self._lines_selected
+            if f"{x.route_id}---{x.direction_id}" in available_values
+        ]
+
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
                     vol.Required(
                         "lines",
-                        default=[
-                            f"{x.route_id}---{x.direction_id}"
-                            for x in self._lines_selected
-                        ],
+                        default=valid_defaults,
                     ): SelectSelector(
                         SelectSelectorConfig(
                             options=options_list,
