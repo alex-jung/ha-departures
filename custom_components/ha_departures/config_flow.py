@@ -439,11 +439,24 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
             f"{line.route_id}---{line.direction_id}"
             for line in self._lines_available
         }
-        valid_defaults = [
-            f"{x.route_id}---{x.direction_id}"
-            for x in self._lines_selected
-            if f"{x.route_id}---{x.direction_id}" in available_values
-        ]
+        valid_defaults = []
+        for old_line in self._lines_selected:
+            value = f"{old_line.route_id}---{old_line.direction_id}"
+            if value in available_values:
+                valid_defaults.append(value)
+            else:
+                # Try suffix match to migrate old route ID format (e.g. missing de-DELFI_ prefix)
+                migrated = next(
+                    (
+                        f"{line.route_id}---{line.direction_id}"
+                        for line in self._lines_available
+                        if line.route_id.endswith(old_line.route_id)
+                        and line.direction_id == old_line.direction_id
+                    ),
+                    None,
+                )
+                if migrated:
+                    valid_defaults.append(migrated)
 
         return self.async_show_form(
             step_id="init",
