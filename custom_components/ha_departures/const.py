@@ -49,6 +49,8 @@ ATTR_TRIP_ID: Final = "trip_id"
 ATTR_DEPARTURE_CANCELLED: Final = "cancelled"
 ATTR_HEAD_SIGN: Final = "head_sign"
 ATTR_DEPARTURE_ALERTS: Final = "alerts"
+ATTR_SCHEDULED_TRACK: Final = "scheduled_track"
+ATTR_TRACK: Final = "track"
 
 DEPARTURES_PER_SENSOR_LIMIT: Final = 10  # max number of departures per sensor
 

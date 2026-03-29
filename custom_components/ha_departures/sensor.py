@@ -19,7 +19,9 @@ from .const import (
     ATTR_LINE_NAME,
     ATTR_PLANNED_DEPARTURE_TIME,
     ATTR_PROVIDER_URL,
+    ATTR_SCHEDULED_TRACK,
     ATTR_TIMES,
+    ATTR_TRACK,
     ATTR_TRANSPORT_TYPE,
     ATTR_TRIP_ID,
     CONF_LINES,
@@ -201,6 +203,8 @@ class DeparturesSensor(
                         ATTR_DEPARTURE_CANCELLED: d.cancelled,
                         ATTR_HEAD_SIGN: d.head_sign,
                         ATTR_DEPARTURE_ALERTS: d.alerts,
+                        ATTR_SCHEDULED_TRACK: d.scheduled_track,
+                        ATTR_TRACK: d.track,
                     }
                     for d in departures
                 ],
