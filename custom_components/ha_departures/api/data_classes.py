@@ -170,6 +170,8 @@ class Departure:
     cancelled: bool = False
     trip_cancelled: bool = False
     alerts: bool = False
+    scheduled_track: str | None = None
+    track: str | None = None
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Departure":
@@ -191,6 +193,8 @@ class Departure:
             cancelled=data.get("cancelled", False),
             trip_cancelled=data.get("tripCancelled", False),
             alerts=bool(alerts),
+            scheduled_track=data.get("place", {}).get("scheduledTrack"),
+            track=data.get("place", {}).get("track"),
         )
 
     def __hash__(self) -> int:
