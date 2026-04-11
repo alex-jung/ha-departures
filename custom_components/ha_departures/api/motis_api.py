@@ -65,9 +65,9 @@ class MotisApi:
             ) as response:
                 response.raise_for_status()
                 return await response.json()
-        except ClientResponseError as e:
+        except ClientResponseError:
             raise
-        except (ClientError, ClientSSLError) as e:
+        except (ClientError, ClientSSLError):
             raise
 
     async def get(
