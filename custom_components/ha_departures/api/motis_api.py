@@ -59,16 +59,11 @@ class MotisApi:
         logger.debug("Request headers: %s", headers)
         logger.debug("Request timeout: %s", timeout)
 
-        try:
-            async with session.get(
-                url, params=params, headers=headers, timeout=timeout
-            ) as response:
-                response.raise_for_status()
-                return await response.json()
-        except ClientResponseError:
-            raise
-        except (ClientError, ClientSSLError):
-            raise
+        async with session.get(
+            url, params=params, headers=headers, timeout=timeout
+        ) as response:
+            response.raise_for_status()
+            return await response.json()
 
     async def get(
         self,
