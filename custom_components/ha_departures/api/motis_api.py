@@ -1,5 +1,6 @@
 """Motis API client."""
 
+import asyncio
 import logging
 from typing import Any
 
@@ -20,6 +21,8 @@ from custom_components.ha_departures.const import (
 from .data_classes import ApiCommand
 
 logger = logging.getLogger(__name__)
+
+TRANSIENT_STATUS_CODES = {429, 500, 502, 503, 504}
 
 
 class MotisApi:
@@ -56,18 +59,11 @@ class MotisApi:
         logger.debug("Request headers: %s", headers)
         logger.debug("Request timeout: %s", timeout)
 
-        try:
-            async with session.get(
-                url, params=params, headers=headers, timeout=timeout
-            ) as response:
-                response.raise_for_status()
-                return await response.json()
-        except ClientResponseError as e:
-            logger.error("HTTP error %s for URL: %s", e.status, url)
-            raise
-        except (ClientError, ClientSSLError) as e:
-            logger.error("Network error for URL: %s; Error: %s", url, str(e))
-            raise
+        async with session.get(
+            url, params=params, headers=headers, timeout=timeout
+        ) as response:
+            response.raise_for_status()
+            return await response.json()
 
     async def get(
         self,
@@ -110,15 +106,27 @@ class MotisApi:
                     return await self.__send_get_request(
                         url, session, headers, _timeout, params
                     )
-            except (ClientResponseError, ClientError, ClientSSLError):
-                if attempt < retry:
+            except ClientResponseError as e:
+                if attempt < retry and e.status in TRANSIENT_STATUS_CODES:
+                    wait = 5 * (2 ** attempt)  # 5s, 10s, 20s
                     logger.debug(
-                        "Retrying request to '%s' (attempt %d of %d)",
-                        url,
-                        attempt + 1,
-                        retry,
+                        "Retrying request to '%s' in %ds (attempt %d of %d)",
+                        url, wait, attempt + 1, retry,
                     )
+                    await asyncio.sleep(wait)
                 else:
+                    logger.error("Request to '%s' failed after %d attempt(s): %s", url, retry + 1, str(e))
+                    raise
+            except (ClientError, ClientSSLError) as e:
+                if attempt < retry:
+                    wait = 5 * (2 ** attempt)  # 5s, 10s, 20s
+                    logger.debug(
+                        "Retrying request to '%s' in %ds (attempt %d of %d)",
+                        url, wait, attempt + 1, retry,
+                    )
+                    await asyncio.sleep(wait)
+                else:
+                    logger.error("Request to '%s' failed after %d attempt(s): %s", url, retry + 1, str(e))
                     raise
 
         return (
