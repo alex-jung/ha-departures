@@ -4,5 +4,5 @@ homeassistant>=2026.4.4
 pip>=21.3.1
 ruff>=0.12.2
 pytest-homeassistant-custom-component>=0.13.236
-pytest-cov>=7.1.0
+pytest-cov>=7.0.0
 pre_commit>=4.6.0
