@@ -119,7 +119,7 @@ def _build_line_options(
     options: list[SelectOptionDict] = []
     seen: Counter[str] = Counter()
 
-    for line, base in zip(lines, base_keys):
+    for line, base in zip(lines, base_keys, strict=True):
         if base_counts[base] == 1:
             key = base
         else:
@@ -283,9 +283,9 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             selected_lines: list[Line] = [
-                self._line_map[key]
+                line
                 for key in user_input.get(CONF_LINES, [])
-                if key in self._line_map
+                if (line := self._line_map.get(key)) is not None
             ]
 
             if not selected_lines:
@@ -393,9 +393,9 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
         if user_input is not None:
             lines_new_state: list[Line] = [
-                self._line_map[key]
+                line
                 for key in user_input.get(CONF_LINES, [])
-                if key in self._line_map
+                if (line := self._line_map.get(key)) is not None
             ]
 
             if lines_new_state == self._lines_selected:
