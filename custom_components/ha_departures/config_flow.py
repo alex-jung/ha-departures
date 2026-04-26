@@ -112,21 +112,19 @@ def _build_line_options(
     lines: list[Line],
 ) -> tuple[list[SelectOptionDict], dict[str, Line]]:
     """Build SelectOptionDict list and a value→Line map with human-readable values."""
-    base_keys = [f"{l.route_short_name} - {l.head_sign}" for l in lines]
+    base_keys = [f"{line.route_short_name} - {line.head_sign}" for line in lines]
     base_counts = Counter(base_keys)
 
     line_map: dict[str, Line] = {}
     options: list[SelectOptionDict] = []
-    seen: Counter = Counter()
+    seen: Counter[str] = Counter()
 
     for line, base in zip(lines, base_keys):
         if base_counts[base] == 1:
             key = base
         else:
-            key = base
-            seen[key] += 1
-            if seen[key] > 1:
-                key = f"{base} ({seen[key]})"
+            seen[base] += 1
+            key = base if seen[base] == 1 else f"{base} ({seen[base]})"
         line_map[key] = line
         options.append(SelectOptionDict(label=key, value=key))
 
