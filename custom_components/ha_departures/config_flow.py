@@ -1,6 +1,7 @@
 """Adds config flow for Public Transport Departures."""
 
 import logging
+from collections import Counter
 from typing import Any
 
 import homeassistant.helpers.config_validation as cv
@@ -107,6 +108,29 @@ async def _fetch_lines(stop_ids: list[str | Stop], unique: bool = True) -> list[
     return list(set(lines)) if unique else lines
 
 
+def _build_line_options(
+    lines: list[Line],
+) -> tuple[list[SelectOptionDict], dict[str, Line]]:
+    """Build SelectOptionDict list and a value→Line map with human-readable values."""
+    base_keys = [f"{line.route_short_name} - {line.head_sign}" for line in lines]
+    base_counts = Counter(base_keys)
+
+    line_map: dict[str, Line] = {}
+    options: list[SelectOptionDict] = []
+    seen: Counter[str] = Counter()
+
+    for line, base in zip(lines, base_keys, strict=True):
+        if base_counts[base] == 1:
+            key = base
+        else:
+            seen[base] += 1
+            key = base if seen[base] == 1 else f"{base} ({seen[base]})"
+        line_map[key] = line
+        options.append(SelectOptionDict(label=key, value=key))
+
+    return options, line_map
+
+
 class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for ha_departures."""
 
@@ -120,6 +144,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         self._stop = None
         self._selected_stops: list[Stop] = []
         self._lines: list[Line] = []
+        self._line_map: dict[str, Line] = {}
         self._data: dict[str, Any] = {}
         self._options: dict[str, Any] = {}
         self._api = MotisApi(base_url=REQUEST_API_URL)
@@ -257,21 +282,11 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         _LOGGER.debug(">> user input: %s", user_input)
 
         if user_input is not None:
-            selected_lines: list[Line] = []
-
-            for line in user_input.get(CONF_LINES, []):
-                (routeId, directionId) = line.split("---")
-
-                selected_lines.append(
-                    next(
-                        filter(
-                            lambda x: (
-                                x.route_id == routeId and x.direction_id == directionId
-                            ),
-                            self._lines,
-                        )
-                    )
-                )
+            selected_lines: list[Line] = [
+                line
+                for key in user_input.get(CONF_LINES, [])
+                if (line := self._line_map.get(key)) is not None
+            ]
 
             if not selected_lines:
                 _errors[CONF_LINES] = CONF_ERROR_NO_LINE_SELECTED
@@ -290,14 +305,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 return await self.async_step_hubname()
 
         self._lines = await _fetch_lines(self._selected_stops, unique=True)
-
-        line_list: list[SelectOptionDict] = [
-            SelectOptionDict(
-                label=f"{line.route_short_name} - {line.head_sign}",
-                value=f"{line.route_id}---{line.direction_id}",
-            )
-            for line in self._lines
-        ]
+        line_list, self._line_map = _build_line_options(self._lines)
 
         return self.async_show_form(
             step_id="lines",
@@ -373,6 +381,7 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
         self._lines_available: list[Line] = [
             Line.from_dict(x) for x in config_entry.data.get(CONF_AVAILABLE_LINES, [])
         ]
+        self._line_map: dict[str, Line] = {}
 
         _LOGGER.debug("Start configuration")
 
@@ -383,24 +392,11 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
         _LOGGER.debug(">> user input: %s", user_input)
 
         if user_input is not None:
-            lines_user_choose = user_input.get(CONF_LINES, [])
-
-            lines_new_state: list[Line] = []
-
-            for user_option in lines_user_choose:
-                (route_id, direction_id) = user_option.split("---")
-
-                lines_new_state.append(
-                    next(
-                        filter(
-                            lambda x: (
-                                x.route_id == route_id
-                                and x.direction_id == direction_id
-                            ),
-                            self._lines_available,
-                        )
-                    )
-                )
+            lines_new_state: list[Line] = [
+                line
+                for key in user_input.get(CONF_LINES, [])
+                if (line := self._line_map.get(key)) is not None
+            ]
 
             if lines_new_state == self._lines_selected:
                 _LOGGER.debug("No changes on entry configuration detected")
@@ -427,36 +423,33 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
             },
         )
 
-        options_list: list[SelectOptionDict] = [
-            SelectOptionDict(
-                label=f"{line.route_short_name} - {line.head_sign}",
-                value=f"{line.route_id}---{line.direction_id}",
-            )
-            for line in self._lines_available
-        ]
+        options_list, self._line_map = _build_line_options(self._lines_available)
 
-        available_values = {
-            f"{line.route_id}---{line.direction_id}"
-            for line in self._lines_available
+        # Compute pre-selected defaults by matching stored lines against the new map.
+        # Falls back to suffix match to migrate old route ID formats.
+        available_by_id = {
+            (line.route_id, line.direction_id): line for line in self._lines_available
         }
         valid_defaults = []
         for old_line in self._lines_selected:
-            value = f"{old_line.route_id}---{old_line.direction_id}"
-            if value in available_values:
-                valid_defaults.append(value)
-            else:
-                # Try suffix match to migrate old route ID format (e.g. missing de-DELFI_ prefix)
-                migrated = next(
+            matched = available_by_id.get((old_line.route_id, old_line.direction_id))
+            if matched is None:
+                # suffix match for migrated route IDs
+                matched = next(
                     (
-                        f"{line.route_id}---{line.direction_id}"
+                        line
                         for line in self._lines_available
                         if line.route_id.endswith(old_line.route_id)
                         and line.direction_id == old_line.direction_id
                     ),
                     None,
                 )
-                if migrated:
-                    valid_defaults.append(migrated)
+            if matched is not None:
+                key = next(
+                    (k for k, v in self._line_map.items() if v == matched), None
+                )
+                if key:
+                    valid_defaults.append(key)
 
         return self.async_show_form(
             step_id="init",
