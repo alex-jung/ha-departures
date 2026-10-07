@@ -142,6 +142,9 @@ After `Submit` a new `Hub` will be created incl. new sensor(s) for each connecti
 
 ![image](assets/setup-step-5.png)
 
+> [!NOTE]
+> Besides the connection sensors, each `Hub` also provides a `<hub name> last update` timestamp sensor with the time of the last successful data refresh. It is `unavailable` until the first successful refresh has completed.
+
 ## Reconfigure an entry
 You can any time add or remove connections to existing `hub's` (stop locations)
 
