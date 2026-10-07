@@ -3,7 +3,7 @@
 import logging
 
 from homeassistant import config_entries, core
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import ATTR_LATITUDE, ATTR_LONGITUDE
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from slugify import slugify
@@ -49,7 +49,8 @@ async def async_setup_entry(
                 line,
             )
             for line in entry.options.get(CONF_LINES, [])
-        ],
+        ]
+        + [DeparturesLastUpdateSensor(coordinator)],
         update_before_add=True,
     )
 
@@ -216,3 +217,27 @@ class DeparturesSensor(
         self.async_write_ha_state()
 
         _LOGGER.debug("<< Sensor updated")
+
+
+class DeparturesLastUpdateSensor(
+    CoordinatorEntity[DeparturesDataUpdateCoordinator], SensorEntity
+):
+    """Time of the last successful API refresh of this hub."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+
+    def __init__(self, coordinator: DeparturesDataUpdateCoordinator) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._attr_name = f"{coordinator.hub_name} last update"
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}-last-update"
+
+    @property
+    def native_value(self):
+        """Return the time of the last successful refresh."""
+        return self.coordinator.last_update_success_time
+
+    @property
+    def available(self) -> bool:
+        """Stay available during API outages, so the staleness stays visible."""
+        return self.coordinator.last_update_success_time is not None
