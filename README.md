@@ -11,6 +11,9 @@ This integration provides real-time information on upcoming departures across va
 
 ***
 
+## Mentioned in
+- [Home Assistant ÖPNV: Abfahrten von Bus und Bahn im Dashboard](https://www.youtube.com/watch?v=XPzLNaTcsak&t=477s) by [Alles Automatisch](https://alles-automatisch.de/)
+
 ## Data source
 The `Public Transport Departures` uses [Transitous](https://transitous.org/) as data source.
 
