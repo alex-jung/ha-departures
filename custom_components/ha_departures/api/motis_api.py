@@ -88,6 +88,7 @@ class MotisApi:
         :raises ClientResponseError: If an HTTP error occurs
         :raises ClientError: If a network error occurs
         :raises ClientSSLError: If an SSL error occurs
+        :raises TimeoutError: If the request times out
 
         """
         url = f"{self.base_url}/{command.value}"
@@ -117,7 +118,7 @@ class MotisApi:
                 else:
                     logger.error("Request to '%s' failed after %d attempt(s): %s", url, retry + 1, str(e))
                     raise
-            except (ClientError, ClientSSLError) as e:
+            except (ClientError, ClientSSLError, TimeoutError) as e:
                 if attempt < retry:
                     wait = 5 * (2 ** attempt)  # 5s, 10s, 20s
                     logger.debug(

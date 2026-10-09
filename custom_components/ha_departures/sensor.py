@@ -179,8 +179,8 @@ class DeparturesSensor(
 
         if not departures:
             self._attr_extra_state_attributes.update({ATTR_TIMES: []})
-            self.async_write_ha_state()
             self._value = None
+            self.async_write_ha_state()
 
             return
 
