@@ -2,6 +2,7 @@
 
 import logging
 import math
+import re
 from datetime import datetime
 
 from homeassistant.util import dt as dt_util
@@ -43,3 +44,27 @@ def bounding_box(lat, lon, radius_m):
     lower_right = (lat - delta_lat, lon + delta_lon)
 
     return upper_left, lower_right
+
+
+def normalize_stop_id(stop_id: str) -> str:
+    """Remove all trailing "_G" suffixes from a stop ID.
+
+    Transitous returns the same stop with a varying number of "_G" suffixes
+    (e.g. "...:293", "...:293_G", "...:293_G_G").
+    """
+    return re.sub(r"(?:_G)+$", "", stop_id)
+
+
+def stop_id_matches(stop_id: str, configured_ids: list[str]) -> bool:
+    """Check whether a stop ID from the API belongs to one of the configured stops.
+
+    A stop matches if its normalized ID equals a configured (normalized) ID or is
+    a child of it, e.g. platform "...:9991:1:1" for the configured stop "...:9991".
+    The child check respects the ":" boundary, so "...:91" never matches "...:911".
+    """
+    normalized = normalize_stop_id(stop_id)
+
+    return any(
+        normalized == base or normalized.startswith(f"{base}:")
+        for base in (normalize_stop_id(c) for c in configured_ids)
+    )

@@ -36,7 +36,7 @@ from .const import (
     REQUEST_API_URL,
     VERSION,
 )
-from .helper import bounding_box
+from .helper import bounding_box, normalize_stop_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ async def _fetch_lines(stop_ids: list[str | Stop], unique: bool = True) -> list[
                 api,
                 ApiCommand.STOP_TIMES,
                 {
-                    "stopId": str(stop_id).removesuffix("_G"),
+                    "stopId": normalize_stop_id(str(stop_id)),
                     "n": str(1000),
                 },
             )

@@ -5,7 +5,12 @@ from datetime import datetime
 import pytest
 from homeassistant.util import dt as dt_util
 
-from custom_components.ha_departures.helper import bounding_box, str_to_datetime
+from custom_components.ha_departures.helper import (
+    bounding_box,
+    normalize_stop_id,
+    stop_id_matches,
+    str_to_datetime,
+)
 
 
 def test_bounding_box_basic():
@@ -109,3 +114,46 @@ def test_str_to_datetime_invalid_date():
 def test_str_to_datetime_leap_second():
     """Test str_to_datetime with a leap second (should be invalid)."""
     assert str_to_datetime("2016-12-31T23:59:60Z") is None
+
+
+@pytest.mark.parametrize(
+    ("stop_id", "expected"),
+    [
+        ("de-DELFI_de:00001:10:0:12", "de-DELFI_de:00001:10:0:12"),
+        ("de-DELFI_de:00001:10:0:12_G", "de-DELFI_de:00001:10:0:12"),
+        ("de-DELFI_de:00001:10:0:12_G_G", "de-DELFI_de:00001:10:0:12"),
+        ("de-DELFI_de:00001:20_G", "de-DELFI_de:00001:20"),
+    ],
+)
+def test_normalize_stop_id(stop_id, expected):
+    """Test that all trailing _G suffixes are removed."""
+    assert normalize_stop_id(stop_id) == expected
+
+
+@pytest.mark.parametrize(
+    ("api_stop_id", "configured", "expected"),
+    [
+        # Configured without suffix, API answers with _G_G
+        (
+            "de-DELFI_de:00001:10:0:12_G_G",
+            ["de-DELFI_de:00001:10:0:10", "de-DELFI_de:00001:10:0:12"],
+            True,
+        ),
+        ("de-DELFI_de:00001:10:0:10_G", ["de-DELFI_de:00001:10:0:10"], True),
+        # Configured parent stop, API answers with platform
+        ("de-DELFI_de:00001:20:1:1", ["de-DELFI_de:00001:20"], True),
+        # Exact match keeps working
+        ("de-DELFI_de:00001:30:0:5", ["de-DELFI_de:00001:30:0:5"], True),
+        # Configured with suffix, API without
+        ("de-DELFI_de:00001:40:2:8", ["de-DELFI_de:00001:40:2:8_G_G"], True),
+        # Neighbour stops inside the request radius must not match
+        ("de-DELFI_de:00001:50:0:1", ["de-DELFI_de:00001:30:0:5"], False),
+        ("de-DELFI_de:00001:10:0:11", ["de-DELFI_de:00001:10:0:12"], False),
+        # ":" boundary: "...:10" must not match "...:101"
+        ("de-DELFI_de:00001:101", ["de-DELFI_de:00001:10"], False),
+        ("de-DELFI_de:00001:10", [], False),
+    ],
+)
+def test_stop_id_matches(api_stop_id, configured, expected):
+    """Test matching of API stop IDs against configured stop IDs."""
+    assert stop_id_matches(api_stop_id, configured) is expected

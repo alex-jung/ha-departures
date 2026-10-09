@@ -23,6 +23,7 @@ from .const import (
     REQUEST_TIMES_PER_LINE_COUNT,
     UPDATE_INTERVAL,
 )
+from .helper import normalize_stop_id, stop_id_matches
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -98,7 +99,7 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
 
         # Take only first stop_id and use "radius" parameter
         # to decrease amount of requests to the server
-        stop_id = self._stop_ids[0].removesuffix("_G")
+        stop_id = normalize_stop_id(self._stop_ids[0])
 
         PARAMS = {
             "stopId": stop_id,
@@ -125,12 +126,13 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
     def _process_data(self, api_response: dict) -> list[Departure]:
         """Process data in a separate thread to avoid blocking the event loop."""
         departures = []
-        stop_ids_normalized = {s.removesuffix("_G") for s in self.stop_ids}
 
         for stop_time in api_response.get("stopTimes", []):
             departure = Departure.from_dict(stop_time)
 
-            if departure not in departures and departure.stop_id in stop_ids_normalized:
+            if departure not in departures and stop_id_matches(
+                departure.stop_id, self.stop_ids
+            ):
                 departures.append(departure)
 
         return departures
