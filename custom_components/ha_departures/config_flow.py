@@ -49,7 +49,7 @@ async def _send_api_request(api: MotisApi, command, params):
     except ClientResponseError as e:
         error = CONF_ERROR_INVALID_RESPONSE
         _LOGGER.error("Client response failty. Error: %s", str(e))
-    except ClientError as e:
+    except (ClientError, TimeoutError) as e:
         _LOGGER.error("Client error occured. Error: %s", str(e))
         error = CONF_ERROR_CONNECTION_FAILED
 
@@ -74,6 +74,18 @@ def _extract_lines_from_stop_times(
         lines.append(line)
 
     return list(set(lines)) if unique else lines
+
+
+def _sorted_lines(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return lines in a stable order, so lists can be compared by content."""
+    return sorted(
+        lines,
+        key=lambda x: (
+            str(x.get("route_id")),
+            str(x.get("direction_id")),
+            str(x.get("head_sign")),
+        ),
+    )
 
 
 async def _fetch_lines(stop_ids: list[str | Stop], unique: bool = True) -> list[Line]:
@@ -417,15 +429,20 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
             self.config_entry.data.get(CONF_STOP_IDS, []), unique=True
         )
 
-        _LOGGER.debug("Updating config entry data with (new) available lines")
+        available_lines = [x.to_dict() for x in self._lines_available]
 
-        self.hass.config_entries.async_update_entry(
-            self.config_entry,
-            data={
-                **self.config_entry.data,
-                CONF_LINES: [x.to_dict() for x in self._lines_available],
-            },
-        )
+        if _sorted_lines(available_lines) != _sorted_lines(
+            self.config_entry.data.get(CONF_AVAILABLE_LINES, [])
+        ):
+            _LOGGER.debug("Updating config entry data with (new) available lines")
+
+            self.hass.config_entries.async_update_entry(
+                self.config_entry,
+                data={
+                    **self.config_entry.data,
+                    CONF_AVAILABLE_LINES: available_lines,
+                },
+            )
 
         options_list: list[SelectOptionDict] = [
             SelectOptionDict(

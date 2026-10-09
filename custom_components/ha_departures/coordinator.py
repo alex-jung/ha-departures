@@ -3,7 +3,7 @@
 import logging
 from datetime import timedelta
 
-from aiohttp import ClientResponseError
+from aiohttp import ClientError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -87,7 +87,7 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
 
         try:
             self._data = await self.__fetch_data()
-        except ClientResponseError as e:
+        except (ClientError, TimeoutError) as e:
             _LOGGER.info("Error fetching data from API. Error: %s", e)
             raise UpdateFailed(e) from e
 

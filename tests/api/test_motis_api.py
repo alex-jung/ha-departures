@@ -110,3 +110,36 @@ async def test_get_max_retries_exceeded(mock_api, command):  # noqa: D103
 
         with pytest.raises(ClientResponseError):
             await mock_api.get(command, params, retry=1)  # Set retry to 1 for testing
+
+
+@pytest.mark.asyncio
+async def test_get_timeout_error(mock_api):  # noqa: D103
+    params = {"param1": "value1"}
+
+    with aioresponses() as mocked:
+        mocked.get(
+            f"http://test.api/{ApiCommand.STOP_TIMES.value}?param1=value1",
+            exception=TimeoutError(),
+        )
+
+        with pytest.raises(TimeoutError):
+            await mock_api.get(ApiCommand.STOP_TIMES, params, retry=0)
+
+
+@pytest.mark.asyncio
+async def test_get_timeout_is_retried(mock_api, monkeypatch):  # noqa: D103
+    params = {"param1": "value1"}
+    url = f"http://test.api/{ApiCommand.STOP_TIMES.value}?param1=value1"
+
+    async def no_sleep(_seconds):
+        return None
+
+    monkeypatch.setattr("asyncio.sleep", no_sleep)
+
+    with aioresponses() as mocked:
+        mocked.get(url, exception=TimeoutError())
+        mocked.get(url, payload={"data": "value"}, status=200)
+
+        result = await mock_api.get(ApiCommand.STOP_TIMES, params, retry=1)
+
+    assert result == {"data": "value"}
