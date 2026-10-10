@@ -169,7 +169,7 @@ sensor:
     sensors:
       furth_197:
         friendly_name: 'Fürth Hauptbahnhof - Bus 179 - Fürth Süd(time only)'
-        value_template: "{{ (as_datetime(states('sensor.furth_hauptbahnhof_bus_179_furth_sud'))).strftime('%H:%m') }}"
+        value_template: "{{ (as_datetime(states('sensor.furth_hauptbahnhof_bus_179_furth_sud'))).strftime('%H:%M') }}"
 ```
 Add entity (or entites) card to your Dashboars(don't forget to reload yaml before)
 ```yaml
