@@ -116,7 +116,12 @@ class MotisApi:
                     )
                     await asyncio.sleep(wait)
                 else:
-                    logger.error("Request to '%s' failed after %d attempt(s): %s", url, retry + 1, str(e))
+                    # 404 means "unknown stop": the caller decides how serious that is
+                    logger.log(
+                        logging.DEBUG if e.status == 404 else logging.ERROR,
+                        "Request to '%s' failed after %d attempt(s): %s",
+                        url, retry + 1, str(e),
+                    )
                     raise
             except (ClientError, ClientSSLError, TimeoutError) as e:
                 if attempt < retry:

@@ -1,5 +1,7 @@
 """Tests for the Motis API client."""
 
+import logging
+
 import pytest
 from aiohttp import ClientError, ClientResponseError
 from aioresponses import aioresponses
@@ -143,3 +145,26 @@ async def test_get_timeout_is_retried(mock_api, monkeypatch):  # noqa: D103
         result = await mock_api.get(ApiCommand.STOP_TIMES, params, retry=1)
 
     assert result == {"data": "value"}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("status", "level"),
+    [(404, logging.DEBUG), (400, logging.ERROR)],
+)
+async def test_get_failure_log_level(mock_api, caplog, status, level):
+    """An unknown stop (404) is only logged for debugging, other errors as error."""
+    params = {"param1": "value1"}
+
+    with aioresponses() as mocked:
+        mocked.get(
+            f"http://test.api/{ApiCommand.STOP_TIMES.value}?param1=value1",
+            status=status,
+        )
+
+        with caplog.at_level(logging.DEBUG), pytest.raises(ClientResponseError):
+            await mock_api.get(ApiCommand.STOP_TIMES, params)
+
+    failed = [r for r in caplog.records if "failed after" in r.getMessage()]
+
+    assert [r.levelno for r in failed] == [level]
