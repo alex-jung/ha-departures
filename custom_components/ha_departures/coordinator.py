@@ -3,7 +3,7 @@
 import logging
 from datetime import timedelta
 
-from aiohttp import ClientError
+from aiohttp import ClientError, ClientResponseError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -23,7 +23,7 @@ from .const import (
     REQUEST_TIMES_PER_LINE_COUNT,
     UPDATE_INTERVAL,
 )
-from .helper import normalize_stop_id, stop_id_matches
+from .helper import stop_id_matches, unique_stop_ids
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -52,6 +52,7 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
         self._hub_name: str = config_entry.title
         self._lines_count: int = len(config_entry.options.get(CONF_LINES, []))
         self._data: list[Departure] = []
+        self._query_stop_id: str | None = None
 
         self._client = MotisApi(REQUEST_API_URL, async_get_clientsession(hass))
 
@@ -97,29 +98,55 @@ class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
         """Fetch data from endpoint."""
         COMMAND = ApiCommand.STOP_TIMES
 
-        # Take only first stop_id and use "radius" parameter
-        # to decrease amount of requests to the server
-        stop_id = normalize_stop_id(self._stop_ids[0])
+        # Take only one stop_id and use "radius" parameter
+        # to decrease amount of requests to the server. If the API does not
+        # know a stop ID (anymore), the next one is tried.
+        stop_ids = unique_stop_ids(self._stop_ids)
 
-        PARAMS = {
-            "stopId": stop_id,
-            "n": str(REQUEST_TIMES_PER_LINE_COUNT * self.lines),
-            "radius": str(RADIUS_FOR_STOPS_REQUEST),
-        }
+        if self._query_stop_id in stop_ids:
+            stop_ids.remove(self._query_stop_id)
+            stop_ids.insert(0, self._query_stop_id)
 
-        _LOGGER.debug(
-            "Fetching stop times for stop_id: %s with params: %s", stop_id, PARAMS
-        )
+        times: dict = {}
 
-        times = await self._client.get(
-            COMMAND, params=PARAMS, retry=REQUEST_RETRIES, timeout=REQUEST_TIMEOUT
-        )
+        for index, stop_id in enumerate(stop_ids):
+            PARAMS = {
+                "stopId": stop_id,
+                "n": str(REQUEST_TIMES_PER_LINE_COUNT * self.lines),
+                "radius": str(RADIUS_FOR_STOPS_REQUEST),
+            }
 
-        _LOGGER.debug(
-            "Received %s stop times for stop_id: %s",
-            len(times.get("stopTimes", [])),
-            stop_id,
-        )
+            _LOGGER.debug(
+                "Fetching stop times for stop_id: %s with params: %s", stop_id, PARAMS
+            )
+
+            try:
+                times = await self._client.get(
+                    COMMAND,
+                    params=PARAMS,
+                    retry=REQUEST_RETRIES,
+                    timeout=REQUEST_TIMEOUT,
+                )
+            except ClientResponseError as e:
+                if e.status != 404 or index == len(stop_ids) - 1:
+                    raise
+
+                _LOGGER.warning(
+                    "Hub '%s': the API does not know stop ID %s (HTTP 404), "
+                    "trying the next one",
+                    self._hub_name,
+                    stop_id,
+                )
+                continue
+
+            self._query_stop_id = stop_id
+
+            _LOGGER.debug(
+                "Received %s stop times for stop_id: %s",
+                len(times.get("stopTimes", [])),
+                stop_id,
+            )
+            break
 
         return await self.hass.async_add_executor_job(self._process_data, times)
 

@@ -36,9 +36,13 @@ from .const import (
     REQUEST_API_URL,
     VERSION,
 )
-from .helper import bounding_box, normalize_stop_id
+from .helper import bounding_box, unique_stop_ids
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class StopNotFoundError(ValueError):
+    """The API does not know the requested stop (HTTP 404)."""
 
 
 async def _send_api_request(api: MotisApi, command, params):
@@ -47,6 +51,8 @@ async def _send_api_request(api: MotisApi, command, params):
     try:
         return await api.get(command, params=params)
     except ClientResponseError as e:
+        if e.status == 404:
+            raise StopNotFoundError(CONF_ERROR_INVALID_RESPONSE) from e
         error = CONF_ERROR_INVALID_RESPONSE
         _LOGGER.error("Client response failty. Error: %s", str(e))
     except (ClientError, TimeoutError) as e:
@@ -88,14 +94,19 @@ def _sorted_lines(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
     )
 
 
-async def _fetch_lines(stop_ids: list[str | Stop], unique: bool = True) -> list[Line]:
-    """Fetch lines for given stop ids."""
+async def _fetch_lines(
+    stop_ids: list[str | Stop], unique: bool = True, label: str = ""
+) -> list[Line]:
+    """Fetch lines for given stop ids.
+
+    :param label: Name of the hub/stop, only used to make log messages readable
+    """
 
     lines: list[Line] = []
 
     api = MotisApi(base_url=REQUEST_API_URL)
 
-    for stop_id in stop_ids:
+    for stop_id in unique_stop_ids(stop_ids):
         _LOGGER.debug("Fetching stop times for stop: %s", stop_id)
 
         try:
@@ -103,12 +114,18 @@ async def _fetch_lines(stop_ids: list[str | Stop], unique: bool = True) -> list[
                 api,
                 ApiCommand.STOP_TIMES,
                 {
-                    "stopId": normalize_stop_id(str(stop_id)),
+                    "stopId": stop_id,
                     "n": str(1000),
                 },
             )
 
             lines.extend(_extract_lines_from_stop_times(stop_times, unique=unique))
+        except StopNotFoundError:
+            _LOGGER.warning(
+                "%s: the API does not know stop ID %s (HTTP 404), it is skipped",
+                label or "Stop",
+                stop_id,
+            )
         except ValueError as err:
             _LOGGER.error(
                 "Error fetching stop times for stop %s: %s, continuing with next stop if available",
@@ -301,7 +318,11 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
                 return await self.async_step_hubname()
 
-        self._lines = await _fetch_lines(self._selected_stops, unique=True)
+        self._lines = await _fetch_lines(
+            self._selected_stops,
+            unique=True,
+            label=f"Stop '{self._data.get(CONF_STOP_NAME, '')}'",
+        )
 
         line_list: list[SelectOptionDict] = [
             SelectOptionDict(
@@ -426,7 +447,12 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
             )
 
         self._lines_available = await _fetch_lines(
-            self.config_entry.data.get(CONF_STOP_IDS, []), unique=True
+            self.config_entry.data.get(CONF_STOP_IDS, []),
+            unique=True,
+            label=(
+                f"Hub '{self.config_entry.title}' (stop "
+                f"'{self.config_entry.data.get(CONF_STOP_NAME, '?')}')"
+            ),
         )
 
         available_lines = [x.to_dict() for x in self._lines_available]
