@@ -229,7 +229,7 @@ class DeparturesLastUpdateSensor(
     def __init__(self, coordinator: DeparturesDataUpdateCoordinator) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
-        self._attr_name = f"{coordinator.hub_name} last update"
+        self._attr_name = f"{coordinator.hub_name}-last update"
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}-last-update"
 
     @property
