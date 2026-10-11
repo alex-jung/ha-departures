@@ -116,7 +116,7 @@ class MotisApi:
                     )
                     await asyncio.sleep(wait)
                 else:
-                    logger.error("Request to '%s' failed after %d attempt(s): %s", url, retry + 1, str(e))
+                    logger.warning("Request to '%s' failed after %d attempt(s): %s", url, retry + 1, str(e))
                     raise
             except (ClientError, ClientSSLError, TimeoutError) as e:
                 if attempt < retry:
@@ -127,7 +127,7 @@ class MotisApi:
                     )
                     await asyncio.sleep(wait)
                 else:
-                    logger.error("Request to '%s' failed after %d attempt(s): %s", url, retry + 1, str(e))
+                    logger.warning("Request to '%s' failed after %d attempt(s): %s", url, retry + 1, str(e))
                     raise
 
         return (
