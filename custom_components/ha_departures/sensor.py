@@ -1,14 +1,17 @@
 """Sensor platform for Public Transport Departures."""
 
 import logging
+from datetime import datetime, timedelta
 
 from homeassistant import config_entries, core
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.const import ATTR_LATITUDE, ATTR_LONGITUDE
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 from slugify import slugify
 
-from .api.data_classes import Line, TransportMode
+from .api.data_classes import Departure, Line, TransportMode
 from .const import (
     ATTR_DEPARTURE_ALERTS,
     ATTR_DEPARTURE_CANCELLED,
@@ -27,6 +30,7 @@ from .const import (
     CONF_LINES,
     DEPARTURES_PER_SENSOR_LIMIT,
     PROVIDER_URL,
+    SENSOR_REFRESH_INTERVAL,
 )
 from .coordinator import DeparturesDataUpdateCoordinator
 
@@ -113,6 +117,32 @@ class DeparturesSensor(
         _LOGGER.debug(">> Direction ID: %s", self._direction_id)
         _LOGGER.debug(">> Stop IDs: %s", coordinator.stop_ids)
 
+    async def async_added_to_hass(self) -> None:
+        """Re-evaluate cached data periodically, independent of API updates."""
+        await super().async_added_to_hass()
+
+        self.async_on_remove(
+            async_track_time_interval(
+                self.hass,
+                self._async_refresh_from_cache,
+                timedelta(seconds=SENSOR_REFRESH_INTERVAL),
+            )
+        )
+
+    @core.callback
+    def _async_refresh_from_cache(self, _now: datetime) -> None:
+        """Drop departed entries and update availability from cached data."""
+        self._handle_coordinator_update()
+
+    @property
+    def available(self) -> bool:
+        """Return True while the last successful update is recent enough.
+
+        Short API outages are bridged with cached data instead of turning
+        the sensor unavailable on the first failed request.
+        """
+        return self.coordinator.has_valid_data
+
     @property
     def native_value(self):
         """Return value of this sensor."""
@@ -166,13 +196,16 @@ class DeparturesSensor(
         _LOGGER.debug(">> Route ID: %s", self._route_id)
         _LOGGER.debug(">> Direction ID: %s", self._direction_id)
 
+        now = dt_util.now()
+
         departures = list(
             filter(
                 lambda d: (
                     d.route_id.endswith(self._route_id)
                     and d.direction_id == self._direction_id
+                    and _is_upcoming(d, now)
                 ),
-                self.coordinator.data,
+                self.coordinator.data or [],
             )
         )
 
@@ -241,3 +274,10 @@ class DeparturesLastUpdateSensor(
     def available(self) -> bool:
         """Stay available during API outages, so the staleness stays visible."""
         return self.coordinator.last_update_success_time is not None
+
+
+def _is_upcoming(departure: Departure, now: datetime) -> bool:
+    """Return True if the departure (real-time, else scheduled) is still ahead."""
+    departure_time = departure.departure or departure.scheduled_departure
+
+    return departure_time is not None and departure_time > now
