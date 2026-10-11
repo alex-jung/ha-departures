@@ -7,7 +7,10 @@ from aiohttp import ClientError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import (
+    TimestampDataUpdateCoordinator,
+    UpdateFailed,
+)
 
 from .api.data_classes import ApiCommand, Departure
 from .api.motis_api import MotisApi
@@ -28,7 +31,7 @@ from .helper import normalize_stop_id, stop_id_matches
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
 
-class DeparturesDataUpdateCoordinator(DataUpdateCoordinator[list[Departure]]):
+class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Departure]]):
     """Class to manage fetching data from the API."""
 
     def __init__(
