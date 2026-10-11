@@ -11,6 +11,7 @@ from homeassistant.helpers.update_coordinator import (
     TimestampDataUpdateCoordinator,
     UpdateFailed,
 )
+from homeassistant.util import dt as dt_util
 
 from .api.data_classes import ApiCommand, Departure
 from .api.motis_api import MotisApi
@@ -24,6 +25,7 @@ from .const import (
     REQUEST_RETRIES,
     REQUEST_TIMEOUT,
     REQUEST_TIMES_PER_LINE_COUNT,
+    STALE_DATA_TIMEOUT,
     UPDATE_INTERVAL,
 )
 from .helper import normalize_stop_id, stop_id_matches
@@ -54,7 +56,6 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
         self._stop_coord: tuple = config_entry.data.get(CONF_STOP_COORD, ())
         self._hub_name: str = config_entry.title
         self._lines_count: int = len(config_entry.options.get(CONF_LINES, []))
-        self._data: list[Departure] = []
 
         self._client = MotisApi(REQUEST_API_URL, async_get_clientsession(hass))
 
@@ -74,6 +75,21 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
         return self._hub_name
 
     @property
+    def data_age(self) -> timedelta | None:
+        """Return the time elapsed since the last successful update."""
+        if self.last_update_success_time is None:
+            return None
+
+        return dt_util.utcnow() - self.last_update_success_time
+
+    @property
+    def has_valid_data(self) -> bool:
+        """Return True if the cached data is recent enough to be used."""
+        age = self.data_age
+
+        return age is not None and age < timedelta(seconds=STALE_DATA_TIMEOUT)
+
+    @property
     def lines(self) -> int:
         """Return count of lines belong to this config entry."""
         return self._lines_count
@@ -89,14 +105,15 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
         _LOGGER.debug("Updating departure data")
 
         try:
-            self._data = await self.__fetch_data()
+            return await self._fetch_data()
         except (ClientError, TimeoutError) as e:
-            _LOGGER.info("Error fetching data from API. Error: %s", e)
-            raise UpdateFailed(e) from e
+            _LOGGER.debug("Error fetching data from API. Error: %s", e)
+            raise UpdateFailed(f"API request failed: {e}") from e
+        except (KeyError, ValueError, TypeError, AttributeError) as e:
+            _LOGGER.debug("Unexpected API response. Error: %s", e)
+            raise UpdateFailed(f"Unexpected API response: {e}") from e
 
-        return self._data
-
-    async def __fetch_data(self) -> list[Departure]:
+    async def _fetch_data(self) -> list[Departure]:
         """Fetch data from endpoint."""
         COMMAND = ApiCommand.STOP_TIMES
 
@@ -129,13 +146,15 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
     def _process_data(self, api_response: dict) -> list[Departure]:
         """Process data in a separate thread to avoid blocking the event loop."""
         departures = []
+        seen: set[Departure] = set()
 
         for stop_time in api_response.get("stopTimes", []):
             departure = Departure.from_dict(stop_time)
 
-            if departure not in departures and stop_id_matches(
+            if departure not in seen and stop_id_matches(
                 departure.stop_id, self.stop_ids
             ):
+                seen.add(departure)
                 departures.append(departure)
 
         return departures
