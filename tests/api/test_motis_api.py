@@ -150,10 +150,10 @@ async def test_get_timeout_is_retried(mock_api, monkeypatch):  # noqa: D103
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("status", "level"),
-    [(404, logging.DEBUG), (400, logging.ERROR)],
+    [(404, logging.DEBUG), (400, logging.WARNING)],
 )
 async def test_get_failure_log_level(mock_api, caplog, status, level):
-    """An unknown stop (404) is only logged for debugging, other errors as error."""
+    """An unknown stop (404) is only logged for debugging, other errors as warning."""
     params = {"param1": "value1"}
 
     with aioresponses() as mocked:

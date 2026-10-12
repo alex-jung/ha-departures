@@ -145,6 +145,27 @@ After `Submit` a new `Hub` will be created incl. new sensor(s) for each connecti
 
 ![image](assets/setup-step-5.png)
 
+All sensors of a `Hub` are grouped under one device. For each connection there are three sensors:
+
+| Sensor | State | Description |
+|---|---|---|
+| `<hub name>-<line>-<destination>` | timestamp | Scheduled departure of the next trip. The attribute `times` lists the next departures with `planned`, `estimated` and `delay` (minutes). |
+| `<hub name>-<line>-<destination>-expected departure` | timestamp | Expected (real-time) departure of the next trip that is not cancelled. Falls back to the scheduled time if there is no real-time data. |
+| `<hub name>-<line>-<destination>-delay` | minutes | Delay of the next trip that is not cancelled. `unknown` if there is no real-time data for this trip. |
+
+> [!NOTE]
+> Besides the connection sensors, each `Hub` also provides a `<hub name>-last update` timestamp sensor (diagnostic) with the time of the last successful data refresh. It is `unavailable` until the first successful refresh has completed.
+
+### Notification before departure
+Because the sensors are timestamp sensors, they can be used directly in a time trigger. Using the `expected departure` sensor, the notification takes delays into account:
+```yaml
+triggers:
+  - trigger: time
+    at:
+      entity_id: sensor.furth_hauptbahnhof_bus_179_furth_sud_expected_departure
+      offset: "-00:10:00"
+```
+
 ## Reconfigure an entry
 You can any time add or remove connections to existing `hub's` (stop locations)
 
@@ -169,7 +190,7 @@ sensor:
     sensors:
       furth_197:
         friendly_name: 'Fürth Hauptbahnhof - Bus 179 - Fürth Süd(time only)'
-        value_template: "{{ (as_datetime(states('sensor.furth_hauptbahnhof_bus_179_furth_sud'))).strftime('%H:%m') }}"
+        value_template: "{{ as_timestamp(states('sensor.furth_hauptbahnhof_bus_179_furth_sud')) | timestamp_custom('%H:%M') }}"
 ```
 Add entity (or entites) card to your Dashboars(don't forget to reload yaml before)
 ```yaml

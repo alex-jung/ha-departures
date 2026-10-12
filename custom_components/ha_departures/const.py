@@ -18,6 +18,8 @@ REQUEST_TIMEOUT: Final = 10  # seconds
 REQUEST_RETRIES: Final = 3  # number of retries for failed requests
 REQUEST_TIMES_PER_LINE_COUNT: Final = 100  # number of departure times to fetch per line
 UPDATE_INTERVAL: Final = 60  # seconds
+STALE_DATA_TIMEOUT: Final = 300  # seconds of cached data use before unavailable
+SENSOR_REFRESH_INTERVAL: Final = 30  # seconds between re-evaluations of cache
 RADIUS_FOR_STOPS_REQUEST = 250  # meters
 
 # Configuration and options
@@ -45,6 +47,7 @@ ATTR_PROVIDER_URL: Final = "data_provider"
 ATTR_TIMES: Final = "times"
 ATTR_PLANNED_DEPARTURE_TIME: Final = "planned"
 ATTR_ESTIMATED_DEPARTURE_TIME: Final = "estimated"
+ATTR_DEPARTURE_DELAY: Final = "delay"
 ATTR_TRIP_ID: Final = "trip_id"
 ATTR_DEPARTURE_CANCELLED: Final = "cancelled"
 ATTR_HEAD_SIGN: Final = "head_sign"
