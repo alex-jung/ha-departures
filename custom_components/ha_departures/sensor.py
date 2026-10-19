@@ -45,6 +45,7 @@ from .const import (
     SENSOR_REFRESH_INTERVAL,
 )
 from .coordinator import DeparturesDataUpdateCoordinator
+from .helper import route_id_matches
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -174,7 +175,7 @@ class DeparturesLineEntity(
         return [
             d
             for d in self.coordinator.data or []
-            if d.route_id.endswith(self._route_id)
+            if route_id_matches(d.route_id, self._route_id)
             and d.direction_id == self._direction_id
             and _is_upcoming(d, now)
         ]

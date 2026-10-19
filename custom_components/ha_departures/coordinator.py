@@ -1,7 +1,7 @@
 """DataUpdateCoordinator for ha_departures integration."""
 
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from aiohttp import ClientError
 from homeassistant.config_entries import ConfigEntry
@@ -20,15 +20,19 @@ from .const import (
     CONF_STOP_COORD,
     CONF_STOP_IDS,
     DOMAIN,
+    MISSING_LINES_RETRY_INTERVAL,
     RADIUS_FOR_STOPS_REQUEST,
     REQUEST_API_URL,
+    REQUEST_EXTRA_PAGE_SIZE,
+    REQUEST_MAX_STOP_TIMES,
     REQUEST_RETRIES,
     REQUEST_TIMEOUT,
     REQUEST_TIMES_PER_LINE_COUNT,
+    REQUEST_WINDOW_MARGIN,
     STALE_DATA_TIMEOUT,
     UPDATE_INTERVAL,
 )
-from .helper import normalize_stop_id, stop_id_matches
+from .helper import normalize_stop_id, route_id_matches, stop_id_matches
 
 _LOGGER: logging.Logger = logging.getLogger(__name__)
 
@@ -55,7 +59,15 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
         self._stop_ids: list[str] = config_entry.data.get(CONF_STOP_IDS, [])
         self._stop_coord: tuple = config_entry.data.get(CONF_STOP_COORD, ())
         self._hub_name: str = config_entry.title
-        self._lines_count: int = len(config_entry.options.get(CONF_LINES, []))
+        self._lines: list[dict] = list(config_entry.options.get(CONF_LINES, []))
+        self._lines_count: int = len(self._lines)
+
+        # Stop times needed so that every line that shows up is covered. The
+        # window is shared by all lines of the stop, so rarely running lines
+        # can lie behind the departures of busy ones.
+        self._window_n: int = 0
+        self._deep_search_after: datetime | None = None
+        self._missing_logged: set[tuple[str, str]] = set()
 
         self._client = MotisApi(REQUEST_API_URL, async_get_clientsession(hass))
 
@@ -123,7 +135,7 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
 
         PARAMS = {
             "stopId": stop_id,
-            "n": str(REQUEST_TIMES_PER_LINE_COUNT * self.lines),
+            "n": str(max(REQUEST_TIMES_PER_LINE_COUNT * self.lines, self._window_n)),
             "radius": str(RADIUS_FOR_STOPS_REQUEST),
         }
 
@@ -141,7 +153,130 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
             stop_id,
         )
 
+        times = await self._load_missing_lines(COMMAND, PARAMS, times)
+
         return await self.hass.async_add_executor_job(self._process_data, times)
+
+    def _first_positions(self, stop_times: list[dict]) -> dict[int, int]:
+        """Map the index of each configured line to its first stop time position."""
+        first: dict[int, int] = {}
+
+        for position, stop_time in enumerate(stop_times):
+            if len(first) == len(self._lines):
+                break
+
+            if not stop_id_matches(
+                stop_time.get("place", {}).get("stopId", ""), self.stop_ids
+            ):
+                continue
+
+            for index, line in enumerate(self._lines):
+                if (
+                    index not in first
+                    and route_id_matches(
+                        stop_time.get("routeId", ""), line.get("route_id", "unknown")
+                    )
+                    and stop_time.get("directionId")
+                    == line.get("direction_id", "unknown")
+                ):
+                    first[index] = position
+
+        return first
+
+    async def _load_missing_lines(
+        self, command: ApiCommand, params: dict[str, str], first_page: dict
+    ) -> dict:
+        """Load further pages until every configured line has a departure.
+
+        The API returns the next N stop times of the whole stop, so a rarely
+        running line can lie behind the departures of busy lines (e.g. a
+        regional train behind the city buses of a station). Loading stops at
+        REQUEST_MAX_STOP_TIMES. Lines that are still missing afterwards (not
+        running, or route ID changed) pause the search for a while, so they do
+        not cost additional requests with every update.
+        """
+        stop_times: list[dict] = list(first_page.get("stopTimes", []))
+        cursor = first_page.get("nextPageCursor")
+        first = self._first_positions(stop_times)
+        searched = False
+
+        if (
+            len(first) < len(self._lines)
+            and cursor
+            and (
+                self._deep_search_after is None
+                or dt_util.utcnow() >= self._deep_search_after
+            )
+        ):
+            try:
+                while (
+                    len(first) < len(self._lines)
+                    and cursor
+                    and len(stop_times) < REQUEST_MAX_STOP_TIMES
+                ):
+                    page = await self._client.get(
+                        command,
+                        params={
+                            **params,
+                            "n": str(
+                                min(
+                                    REQUEST_EXTRA_PAGE_SIZE,
+                                    REQUEST_MAX_STOP_TIMES - len(stop_times),
+                                )
+                            ),
+                            "pageCursor": cursor,
+                        },
+                        retry=REQUEST_RETRIES,
+                        timeout=REQUEST_TIMEOUT,
+                    )
+                    stop_times.extend(page.get("stopTimes", []))
+                    cursor = page.get("nextPageCursor")
+                    first = self._first_positions(stop_times)
+
+                searched = True
+            except (ClientError, TimeoutError, ValueError, AttributeError) as e:
+                # The first page is complete data; failing here must not drop it
+                _LOGGER.debug("Error loading further stop times: %s", e)
+                return {**first_page, "stopTimes": stop_times}
+
+        if searched:
+            self._deep_search_after = (
+                dt_util.utcnow() + timedelta(seconds=MISSING_LINES_RETRY_INTERVAL)
+                if len(first) < len(self._lines)
+                else None
+            )
+
+        self._window_n = (
+            min(max(first.values()) + 1 + REQUEST_WINDOW_MARGIN, REQUEST_MAX_STOP_TIMES)
+            if first
+            else 0
+        )
+        self._log_missing_lines(first, len(stop_times))
+
+        return {**first_page, "stopTimes": stop_times}
+
+    def _log_missing_lines(self, first: dict[int, int], count: int) -> None:
+        """Warn once per line that is not part of the loaded stop times."""
+        for index, line in enumerate(self._lines):
+            key = (line.get("route_id", "unknown"), line.get("direction_id", "unknown"))
+
+            if index in first:
+                self._missing_logged.discard(key)
+            elif key not in self._missing_logged:
+                self._missing_logged.add(key)
+                _LOGGER.warning(
+                    "Hub '%s': line %s to '%s' (route ID %s, direction %s) is not "
+                    "among the next %d departures of the API. A rarely running "
+                    "line can be missing for a while; if it never shows up, its "
+                    "route ID may have changed. Select the line again in the "
+                    "hub options.",
+                    self._hub_name,
+                    line.get("route_short_name", "?"),
+                    line.get("head_sign", "?"),
+                    key[0],
+                    key[1],
+                    count,
+                )
 
     def _process_data(self, api_response: dict) -> list[Departure]:
         """Process data in a separate thread to avoid blocking the event loop."""
