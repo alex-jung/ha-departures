@@ -55,6 +55,15 @@ def normalize_stop_id(stop_id: str) -> str:
     return re.sub(r"(?:_G)+$", "", stop_id)
 
 
+def unique_stop_ids(stop_ids: list) -> list[str]:
+    """Return the normalized stop IDs without duplicates, keeping the order.
+
+    The stop list of Transitous contains the same stop several times
+    ("...:293", "...:293_G", "...:293_G_G"); all of them are requested alike.
+    """
+    return list(dict.fromkeys(normalize_stop_id(str(s)) for s in stop_ids))
+
+
 def stop_id_matches(stop_id: str, configured_ids: list[str]) -> bool:
     """Check whether a stop ID from the API belongs to one of the configured stops.
 
