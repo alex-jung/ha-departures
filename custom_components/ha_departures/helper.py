@@ -68,3 +68,12 @@ def stop_id_matches(stop_id: str, configured_ids: list[str]) -> bool:
         normalized == base or normalized.startswith(f"{base}:")
         for base in (normalize_stop_id(c) for c in configured_ids)
     )
+
+
+def route_id_matches(route_id: str, configured_route_id: str) -> bool:
+    """Check whether a route ID from the API belongs to a configured line.
+
+    Stored route IDs may lack the feed prefix (e.g. "de-DELFI_"), so the API ID
+    only has to end with the stored one.
+    """
+    return route_id.endswith(configured_route_id)
