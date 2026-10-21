@@ -1,6 +1,6 @@
 colorlog>=6.12.0
 homeassistant>=2026.10.2
-ruff>=0.17.0
+ruff>=0.17.1
 pip>=26.2.1
 pytest-homeassistant-custom-component>=0.13.373
 pytest-cov>=7.1.0
