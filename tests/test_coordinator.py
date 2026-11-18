@@ -221,7 +221,7 @@ async def test_missing_line_limits_requests_and_pauses_search(
 
     coordinator._client.get.side_effect = _endless
 
-    with caplog.at_level(logging.WARNING):
+    with caplog.at_level(logging.INFO):
         await coordinator._async_update_data()
 
     loaded = sum(int(p["n"]) for p in _requested_params(coordinator))
@@ -232,7 +232,7 @@ async def test_missing_line_limits_requests_and_pauses_search(
     coordinator._client.get.reset_mock()
     coordinator._client.get.side_effect = _endless
 
-    with caplog.at_level(logging.WARNING):
+    with caplog.at_level(logging.INFO):
         await coordinator._async_update_data()
 
     assert len(_requested_params(coordinator)) == 1
@@ -241,6 +241,8 @@ async def test_missing_line_limits_requests_and_pauses_search(
 
     assert len(warnings) == 1
     assert "X1" in warnings[0].getMessage()
+    # missing lines are normal for rarely running lines, no warning in the log
+    assert warnings[0].levelno == logging.INFO
 
 
 async def test_search_is_repeated_after_pause(two_line_coordinator):
@@ -274,3 +276,111 @@ async def test_error_on_further_page_keeps_first_page(two_line_coordinator):
 
     assert len(departures) == 5
     assert coordinator._deep_search_after is None
+
+
+# ---------------------------------------------------------------------------
+# Changed route type suffix of a stored line
+# ---------------------------------------------------------------------------
+
+
+def _typed(trip_id: str, route_id: str, route_type: int, name: str) -> dict:
+    stop_time = _stop_time(trip_id, route_id=route_id)
+    stop_time.update({"routeType": route_type, "routeShortName": name})
+
+    return stop_time
+
+
+@pytest.fixture
+def typed_coordinator(coordinator) -> DeparturesDataUpdateCoordinator:
+    """Coordinator mit einer DELFI-Linie, gespeichert mit Suffix "_100"."""
+    coordinator._lines = [
+        {
+            "route_id": "de-DELFI_de:beg:RE3:_100",
+            "direction_id": "0",
+            "route_short_name": "RE3",
+        }
+    ]
+
+    return coordinator
+
+
+async def test_line_with_changed_route_type_suffix_is_found(typed_coordinator):
+    """Gespeichert "_100", die API liefert "_106": die Linie wird gefunden."""
+    changed = _typed("trip-1", "de-DELFI_de:beg:RE3:_106", 106, "RE3")
+
+    assert typed_coordinator._first_positions([_stop_time("other"), changed]) == (
+        {},
+        {0: 1},
+    )
+
+
+async def test_line_with_other_short_name_is_not_found(typed_coordinator):
+    """Gleiche Basis-ID, aber anderer Kurzname: keine Zuordnung."""
+    other = _typed("trip-1", "de-DELFI_de:beg:RE3:_106", 106, "RE2")
+
+    assert typed_coordinator._first_positions([other]) == ({}, {})
+
+
+async def test_changed_line_sets_window_without_warning(typed_coordinator, caplog):
+    """Eine nur über den geänderten Suffix gefundene Linie bestimmt das Fenster.
+
+    Nach der exakten ID wird weiter gesucht, aber nicht bei jedem Update.
+    """
+    coordinator = typed_coordinator
+    changed = _typed("trip-1", "de-DELFI_de:beg:RE3:_106", 106, "RE3")
+    coordinator._client.get.side_effect = [
+        _page([_stop_time("other"), changed], cursor="cursor-1"),
+        _page([]),
+    ]
+
+    with caplog.at_level(logging.INFO):
+        departures = await coordinator._async_update_data()
+
+    assert "trip-1" in [d.trip_id for d in departures]
+    assert coordinator._window_n == 1 + 1 + 25
+    assert coordinator._deep_search_after is not None
+    assert not [r for r in caplog.records if "RE3" in r.getMessage()]
+
+
+async def test_exact_route_id_wins_over_changed_suffix(coordinator):
+    """Liegt eine Route gleicher Klasse vorn, wird trotzdem die eigene gesucht.
+
+    Im DELFI-Feed (routes.txt) stehen Buslinien teils als "_700" und "_3"
+    mit gleicher Basis und gleichem Namen nebeneinander.
+    """
+    coordinator._lines = [
+        {
+            "route_id": "de-DELFI_de:mvv:X1:_700",
+            "direction_id": "0",
+            "route_short_name": "X1",
+        }
+    ]
+    neighbour = _typed("neighbour", "de-DELFI_de:mvv:X1:_3", 3, "X1")
+    own = _typed("own", "de-DELFI_de:mvv:X1:_700", 700, "X1")
+    coordinator._client.get.side_effect = [
+        _page([neighbour, _stop_time("other")], cursor="cursor-1"),
+        _page([own]),
+    ]
+
+    await coordinator._async_update_data()
+
+    assert len(_requested_params(coordinator)) == 2
+    assert coordinator._window_n == 2 + 1 + 25
+    assert coordinator._deep_search_after is None
+
+
+async def test_ice_line_ignores_ic_of_same_number(coordinator):
+    """ICE ("_101") und IC ("_102") derselben Nummer sind verschiedene Züge.
+
+    Gemessen in München Hbf: Linie 62.
+    """
+    coordinator._lines = [
+        {
+            "route_id": "de-DELFI_162319_102",
+            "direction_id": "0",
+            "route_short_name": "62",
+        }
+    ]
+    ice = _typed("ice", "de-DELFI_162319_101", 101, "62")
+
+    assert coordinator._first_positions([ice]) == ({}, {})

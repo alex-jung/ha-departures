@@ -298,3 +298,82 @@ async def test_setup_creates_grouped_sensors(
     assert expected.state == estimated.isoformat()
     assert delay.state == "12"
     assert delay.attributes["unit_of_measurement"] == "min"
+
+
+# ---------------------------------------------------------------------------
+# Changed route type suffix of a stored line
+# ---------------------------------------------------------------------------
+
+
+async def test_sensor_finds_departures_after_route_type_suffix_changed(
+    hass, coordinator
+):
+    """Gespeichert "_100", die API liefert "_106": der Sensor zeigt Abfahrten."""
+    line = {
+        **LINE,
+        "route_id": "de-DELFI_de:beg:RE3:_100",
+        "route_short_name": "RE3",
+    }
+    departure = _departure("trip-1", timedelta(minutes=5))
+    departure.route_id = "de-DELFI_de:beg:RE3:_106"
+    departure.route_type = 106
+    departure.route_short_name = "RE3"
+    coordinator.data = [departure]
+    sensor = DeparturesExpectedSensor(coordinator, line)
+
+    _update(sensor)
+
+    assert sensor.native_value == departure.departure
+
+
+async def test_sensor_ignores_other_line_with_same_number(hass, coordinator):
+    """Gleiche Zahl am Ende, aber anderer Kurzname: keine Abfahrt."""
+    line = {
+        **LINE,
+        "route_id": "de-DELFI_de:beg:RE3:_100",
+        "route_short_name": "RE3",
+    }
+    departure = _departure("trip-1", timedelta(minutes=5))
+    departure.route_id = "de-DELFI_de:beg:RE3:_106"
+    departure.route_type = 106
+    departure.route_short_name = "RE2"
+    coordinator.data = [departure]
+    sensor = DeparturesExpectedSensor(coordinator, line)
+
+    _update(sensor)
+
+    assert sensor.native_value is None
+
+
+async def test_sensor_prefers_exact_route_id(hass, coordinator):
+    """Ist die eigene ID in den Daten, zählt eine Route gleicher Klasse nicht mit."""
+    line = {**LINE, "route_id": "de-DELFI_de:mvv:X1:_700", "route_short_name": "X1"}
+    neighbour = _departure("neighbour", timedelta(minutes=5))
+    neighbour.route_id = "de-DELFI_de:mvv:X1:_3"
+    neighbour.route_type = 3
+    neighbour.route_short_name = "X1"
+    own = _departure("own", timedelta(minutes=20))
+    own.route_id = "de-DELFI_de:mvv:X1:_700"
+    own.route_type = 700
+    own.route_short_name = "X1"
+    coordinator.data = [neighbour, own]
+    sensor = DeparturesExpectedSensor(coordinator, line)
+
+    _update(sensor)
+
+    assert sensor.native_value == own.departure
+
+
+async def test_train_sensor_never_shows_bus(hass, coordinator):
+    """Ein Zug-Sensor zeigt keinen Bus gleichen Namens, auch wenn der Zug fehlt."""
+    line = {**LINE, "route_id": "de-DELFI_2280319_100", "route_short_name": "RE25"}
+    bus = _departure("bus", timedelta(minutes=5))
+    bus.route_id = "de-DELFI_2280319_3"
+    bus.route_type = 3
+    bus.route_short_name = "RE25"
+    coordinator.data = [bus]
+    sensor = DeparturesExpectedSensor(coordinator, line)
+
+    _update(sensor)
+
+    assert sensor.native_value is None

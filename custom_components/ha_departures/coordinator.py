@@ -157,12 +157,20 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
 
         return await self.hass.async_add_executor_job(self._process_data, times)
 
-    def _first_positions(self, stop_times: list[dict]) -> dict[int, int]:
-        """Map the index of each configured line to its first stop time position."""
-        first: dict[int, int] = {}
+    def _first_positions(
+        self, stop_times: list[dict]
+    ) -> tuple[dict[int, int], dict[int, int]]:
+        """Map each configured line to its first stop time position.
+
+        Returns the positions of the exact route ID and, separately, of a
+        route ID whose route type suffix changed. The latter is only used for
+        lines without any exact match.
+        """
+        exact: dict[int, int] = {}
+        changed: dict[int, int] = {}
 
         for position, stop_time in enumerate(stop_times):
-            if len(first) == len(self._lines):
+            if len(exact) == len(self._lines):
                 break
 
             if not stop_id_matches(
@@ -170,18 +178,26 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
             ):
                 continue
 
-            for index, line in enumerate(self._lines):
-                if (
-                    index not in first
-                    and route_id_matches(
-                        stop_time.get("routeId", ""), line.get("route_id", "unknown")
-                    )
-                    and stop_time.get("directionId")
-                    == line.get("direction_id", "unknown")
-                ):
-                    first[index] = position
+            route_id = stop_time.get("routeId", "")
 
-        return first
+            for index, line in enumerate(self._lines):
+                if index in exact or stop_time.get("directionId") != line.get(
+                    "direction_id", "unknown"
+                ):
+                    continue
+
+                if route_id_matches(route_id, line.get("route_id", "unknown")):
+                    exact[index] = position
+                elif index not in changed and route_id_matches(
+                    route_id,
+                    line.get("route_id", "unknown"),
+                    stop_time.get("routeType"),
+                    stop_time.get("routeShortName"),
+                    line.get("route_short_name"),
+                ):
+                    changed[index] = position
+
+        return exact, changed
 
     async def _load_missing_lines(
         self, command: ApiCommand, params: dict[str, str], first_page: dict
@@ -197,7 +213,7 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
         """
         stop_times: list[dict] = list(first_page.get("stopTimes", []))
         cursor = first_page.get("nextPageCursor")
-        first = self._first_positions(stop_times)
+        first, changed = self._first_positions(stop_times)
         searched = False
 
         if (
@@ -231,7 +247,7 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
                     )
                     stop_times.extend(page.get("stopTimes", []))
                     cursor = page.get("nextPageCursor")
-                    first = self._first_positions(stop_times)
+                    first, changed = self._first_positions(stop_times)
 
                 searched = True
             except (ClientError, TimeoutError, ValueError, AttributeError) as e:
@@ -240,11 +256,16 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
                 return {**first_page, "stopTimes": stop_times}
 
         if searched:
+            # A line found only with a changed route ID keeps being searched
+            # for its exact one, but not with every update
             self._deep_search_after = (
                 dt_util.utcnow() + timedelta(seconds=MISSING_LINES_RETRY_INTERVAL)
                 if len(first) < len(self._lines)
                 else None
             )
+
+        # Lines without their exact route ID use a changed one, if found
+        first = {**changed, **first}
 
         self._window_n = (
             min(max(first.values()) + 1 + REQUEST_WINDOW_MARGIN, REQUEST_MAX_STOP_TIMES)
@@ -256,7 +277,7 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
         return {**first_page, "stopTimes": stop_times}
 
     def _log_missing_lines(self, first: dict[int, int], count: int) -> None:
-        """Warn once per line that is not part of the loaded stop times."""
+        """Log once per line while it is not part of the loaded stop times."""
         for index, line in enumerate(self._lines):
             key = (line.get("route_id", "unknown"), line.get("direction_id", "unknown"))
 
@@ -264,7 +285,9 @@ class DeparturesDataUpdateCoordinator(TimestampDataUpdateCoordinator[list[Depart
                 self._missing_logged.discard(key)
             elif key not in self._missing_logged:
                 self._missing_logged.add(key)
-                _LOGGER.warning(
+                # Info, not warning: lines that run only now and then (e.g.
+                # replacement buses) are missing for days, which is normal
+                _LOGGER.info(
                     "Hub '%s': line %s to '%s' (route ID %s, direction %s) is not "
                     "among the next %d departures of the API. A rarely running "
                     "line can be missing for a while; if it never shows up, its "
