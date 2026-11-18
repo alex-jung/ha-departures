@@ -10,6 +10,7 @@ from custom_components.ha_departures.helper import (
     normalize_stop_id,
     stop_id_matches,
     str_to_datetime,
+    unique_stop_ids,
 )
 
 
@@ -157,3 +158,19 @@ def test_normalize_stop_id(stop_id, expected):
 def test_stop_id_matches(api_stop_id, configured, expected):
     """Test matching of API stop IDs against configured stop IDs."""
     assert stop_id_matches(api_stop_id, configured) is expected
+
+
+@pytest.mark.parametrize(
+    ("stop_ids", "expected"),
+    [
+        ([], []),
+        (["a:1"], ["a:1"]),
+        # the same stop with a varying number of "_G" suffixes is requested once
+        (["a:1", "a:1_G", "a:1_G_G"], ["a:1"]),
+        # order of first appearance is kept
+        (["b:2_G", "a:1", "b:2"], ["b:2", "a:1"]),
+    ],
+)
+def test_unique_stop_ids(stop_ids, expected):
+    """Duplicates caused by the "_G" suffixes are removed."""
+    assert unique_stop_ids(stop_ids) == expected
