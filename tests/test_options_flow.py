@@ -6,8 +6,10 @@ import pytest
 
 from custom_components.ha_departures.api.data_classes import Line, TransportMode
 from custom_components.ha_departures.config_flow import (
+    DeparturesFlowHandler,
     DeparturesOptionsFlowHandler,
     _extract_lines_from_stop_times,
+    _line_label,
     _preselect_lines,
 )
 from custom_components.ha_departures.const import CONF_AVAILABLE_LINES, CONF_LINES
@@ -210,3 +212,86 @@ def test_same_line_stored_twice_is_preselected_once():
 
     assert defaults == ["de-DELFI_de:beg:RE3:_106---0"]
     assert keep == {}
+
+
+@pytest.mark.parametrize(
+    ("line", "label"),
+    [
+        (API_RE3, "🚆 RE3 - München Hbf"),
+        (_line("x_3", name="RB45", mode=BUS, route_type=3), "🚌 RB45 - München Hbf"),
+        (
+            _line(
+                "x_101",
+                name="ICE 25",
+                mode=TransportMode.HIGHSPEED_RAIL,
+                route_type=101,
+            ),
+            "🚄 ICE 25 - München Hbf",
+        ),
+        # the route type of the route decides, not the mode of a single trip
+        (
+            _line("x_106", mode=TransportMode.HIGHSPEED_RAIL, route_type=106),
+            "🚆 RE3 - München Hbf",
+        ),
+        # without route type the mode is used
+        (_line("x", name="607", mode=BUS), "🚌 607 - München Hbf"),
+        (_line("x", mode=TransportMode.TRAM), "🚊 RE3 - München Hbf"),
+        # METRO is the old API name of SUBURBAN, not a subway
+        (_line("x", name="S1", mode=TransportMode.METRO), "🚆 S1 - München Hbf"),
+        (_line("x", name="RUF", mode=TransportMode.ODM), "🚐 RUF - München Hbf"),
+        # unknown kind of vehicle: no symbol
+        (_line("x", mode=TransportMode.OTHER, route_type=1700), "RE3 - München Hbf"),
+    ],
+)
+def test_line_label_shows_vehicle(line, label):
+    """The selector shows the kind of vehicle in front of the line."""
+    assert _line_label(line) == label
+
+
+async def test_options_show_vehicle_symbol(monkeypatch):
+    """Train and replacement bus of the same name differ in the options."""
+    bus = _line("de-DELFI_2230866_3", name="RE3", mode=BUS, route_type=3)
+
+    async def fetch(*_args, **_kwargs):
+        return [API_RE3, bus]
+
+    monkeypatch.setattr(
+        "custom_components.ha_departures.config_flow._fetch_lines", fetch
+    )
+    flow = _flow([API_RE3], [API_RE3])
+    flow.hass = Mock()
+    flow.hass.config_entries.async_get_known_entry.return_value = Mock(
+        data={CONF_AVAILABLE_LINES: [API_RE3.to_dict()]}
+    )
+
+    form = await flow.async_step_init()
+    selector = next(iter(form["data_schema"].schema.values()))
+    labels = {o["value"]: o["label"] for o in selector.config["options"]}
+
+    assert labels == {
+        "de-DELFI_de:beg:RE3:_106---0": "🚆 RE3 - München Hbf",
+        "de-DELFI_2230866_3---0": "🚌 RE3 - München Hbf",
+    }
+
+
+async def test_setup_shows_vehicle_symbol(monkeypatch):
+    """Adding a hub shows the kind of vehicle in front of the line, too."""
+    bus = _line("de-DELFI_2230866_3", name="RE3", mode=BUS, route_type=3)
+
+    async def fetch(*_args, **_kwargs):
+        return [API_RE3, bus]
+
+    monkeypatch.setattr(
+        "custom_components.ha_departures.config_flow._fetch_lines", fetch
+    )
+    flow = DeparturesFlowHandler()
+    flow.flow_id = "flow"
+    flow.handler = "ha_departures"
+
+    form = await flow.async_step_lines()
+    selector = next(iter(form["data_schema"].schema.values()))
+
+    assert sorted(o["label"] for o in selector.config["options"]) == [
+        "🚆 RE3 - München Hbf",
+        "🚌 RE3 - München Hbf",
+    ]

@@ -36,7 +36,12 @@ from .const import (
     REQUEST_API_URL,
     VERSION,
 )
-from .helper import bounding_box, normalize_stop_id, route_id_matches
+from .helper import (
+    bounding_box,
+    normalize_stop_id,
+    route_id_matches,
+    vehicle_class,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -87,6 +92,70 @@ def _sorted_lines(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
             str(x.get("head_sign")),
         ),
     )
+
+
+# Symbol per vehicle class (from the GTFS route type, see helper.vehicle_class)
+_CLASS_SYMBOL: dict[str, str] = {
+    "high_speed": "🚄",
+    "long_distance": "🚄",
+    "night": "🚆",
+    "regional": "🚆",
+    "suburban": "🚆",
+    "subway": "🚇",
+    "tram": "🚊",
+    "bus": "🚌",
+    "coach": "🚌",
+    "on_demand": "🚐",
+    "ride_sharing": "🚗",
+    "ship": "⛴️",
+    "aerial_lift": "🚡",
+    "funicular": "🚞",
+    "air": "✈️",
+}
+
+# Fallback per transport mode, if the API reports no known route type
+_MODE_SYMBOL: dict[TransportMode, str] = {
+    TransportMode.HIGHSPEED_RAIL: "🚄",
+    TransportMode.LONG_DISTANCE: "🚄",
+    TransportMode.RAIL: "🚆",
+    TransportMode.NIGHT_RAIL: "🚆",
+    TransportMode.REGIONAL_FAST_RAIL: "🚆",
+    TransportMode.REGIONAL_RAIL: "🚆",
+    TransportMode.SUBURBAN: "🚆",
+    TransportMode.SUBWAY: "🚇",
+    # MOTIS API < v5 name of SUBURBAN
+    TransportMode.METRO: "🚆",
+    TransportMode.TRAM: "🚊",
+    TransportMode.BUS: "🚌",
+    TransportMode.COACH: "🚌",
+    TransportMode.FLEX: "🚐",
+    TransportMode.ODM: "🚐",
+    TransportMode.RIDE_SHARING: "🚗",
+    TransportMode.FERRY: "⛴️",
+    TransportMode.CABLE_CAR: "🚡",
+    TransportMode.AERIAL_LIFT: "🚡",
+    TransportMode.AREAL_LIFT: "🚡",
+    TransportMode.FUNICULAR: "🚞",
+    TransportMode.AIRPLANE: "✈️",
+}
+
+
+def _line_label(line: Line) -> str:
+    """Return the label of a line in the line selector, with a vehicle symbol.
+
+    The symbol tells e.g. a train from its replacement bus of the same name,
+    if the replacement bus is a route of its own. It shows the kind of vehicle
+    of the route: taken from the route type, the mode is only used if the route
+    type is unknown. Single trips of a route run with another vehicle (GTFS
+    trip_route_type) get no symbol of their own. The selector sorts by label,
+    so the lines are grouped by vehicle.
+    """
+    symbol = _CLASS_SYMBOL.get(vehicle_class(line.route_type) or "") or (
+        _MODE_SYMBOL.get(line.mode, "")
+    )
+    label = f"{line.route_short_name} - {line.head_sign}"
+
+    return f"{symbol} {label}" if symbol else label
 
 
 def _line_value(line: Line) -> str:
@@ -374,7 +443,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         line_list: list[SelectOptionDict] = [
             SelectOptionDict(
-                label=f"{line.route_short_name} - {line.head_sign}",
+                label=_line_label(line),
                 value=f"{line.route_id}---{line.direction_id}",
             )
             for line in self._lines
@@ -520,7 +589,7 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
         options_list: list[SelectOptionDict] = [
             SelectOptionDict(
-                label=f"{line.route_short_name} - {line.head_sign}",
+                label=_line_label(line),
                 value=f"{line.route_id}---{line.direction_id}",
             )
             for line in self._lines_available
