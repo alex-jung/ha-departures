@@ -1,6 +1,6 @@
 """Data classes and enums for API classes."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
@@ -119,6 +119,8 @@ class Line:
     head_sign: str
     route_short_name: str
     mode: TransportMode
+    # GTFS route type as reported by the API; not stored with the line
+    route_type: int | None = field(default=None, compare=False)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert Line object to dictionary."""
@@ -154,7 +156,6 @@ class Line:
         )
 
 
-
 @dataclass
 class Departure:
     """Data class for a departure."""
@@ -172,6 +173,9 @@ class Departure:
     alerts: bool = False
     scheduled_track: str | None = None
     track: str | None = None
+    # not part of the identity of a departure
+    route_type: int | None = field(default=None, compare=False)
+    route_short_name: str = field(default="", compare=False)
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "Departure":
@@ -195,6 +199,8 @@ class Departure:
             alerts=bool(alerts),
             scheduled_track=data.get("place", {}).get("scheduledTrack"),
             track=data.get("place", {}).get("track"),
+            route_type=data.get("routeType"),
+            route_short_name=data.get("routeShortName") or "",
         )
 
     def __hash__(self) -> int:
