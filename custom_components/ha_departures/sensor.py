@@ -45,6 +45,7 @@ from .const import (
     SENSOR_REFRESH_INTERVAL,
 )
 from .coordinator import DeparturesDataUpdateCoordinator
+from .helper import route_id_matches
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -168,16 +169,30 @@ class DeparturesLineEntity(
                 return "mdi:train-bus"
 
     def _upcoming_departures(self) -> list[Departure]:
-        """Return the cached departures of this line that are still ahead."""
-        now = dt_util.now()
+        """Return the cached departures of this line that are still ahead.
 
-        return [
+        Departures with the exact route ID win; a route ID with a changed
+        route type suffix is only used if the exact one is not in the data.
+        """
+        now = dt_util.now()
+        own = [
             d
             for d in self.coordinator.data or []
-            if d.route_id.endswith(self._route_id)
-            and d.direction_id == self._direction_id
-            and _is_upcoming(d, now)
+            if d.direction_id == self._direction_id
         ]
+        line = [d for d in own if route_id_matches(d.route_id, self._route_id)] or [
+            d
+            for d in own
+            if route_id_matches(
+                d.route_id,
+                self._route_id,
+                d.route_type,
+                d.route_short_name,
+                self._route_name,
+            )
+        ]
+
+        return [d for d in line if _is_upcoming(d, now)]
 
 
 class DeparturesSensor(DeparturesLineEntity):

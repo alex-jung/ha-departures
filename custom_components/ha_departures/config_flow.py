@@ -36,7 +36,12 @@ from .const import (
     REQUEST_API_URL,
     VERSION,
 )
-from .helper import bounding_box, normalize_stop_id
+from .helper import (
+    bounding_box,
+    normalize_stop_id,
+    route_id_matches,
+    vehicle_class,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -69,6 +74,7 @@ def _extract_lines_from_stop_times(
             head_sign=stop_time.get("headsign"),
             route_short_name=stop_time.get("routeShortName"),
             mode=TransportMode(stop_time.get("mode")),
+            route_type=stop_time.get("routeType"),
         )
 
         lines.append(line)
@@ -86,6 +92,138 @@ def _sorted_lines(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
             str(x.get("head_sign")),
         ),
     )
+
+
+# Symbol per vehicle class (from the GTFS route type, see helper.vehicle_class)
+_CLASS_SYMBOL: dict[str, str] = {
+    "high_speed": "🚄",
+    "long_distance": "🚄",
+    "night": "🚆",
+    "regional": "🚆",
+    "suburban": "🚆",
+    "subway": "🚇",
+    "tram": "🚊",
+    "bus": "🚌",
+    "coach": "🚌",
+    "on_demand": "🚐",
+    "ride_sharing": "🚗",
+    "ship": "⛴️",
+    "aerial_lift": "🚡",
+    "funicular": "🚞",
+    "air": "✈️",
+}
+
+# Fallback per transport mode, if the API reports no known route type
+_MODE_SYMBOL: dict[TransportMode, str] = {
+    TransportMode.HIGHSPEED_RAIL: "🚄",
+    TransportMode.LONG_DISTANCE: "🚄",
+    TransportMode.RAIL: "🚆",
+    TransportMode.NIGHT_RAIL: "🚆",
+    TransportMode.REGIONAL_FAST_RAIL: "🚆",
+    TransportMode.REGIONAL_RAIL: "🚆",
+    TransportMode.SUBURBAN: "🚆",
+    TransportMode.SUBWAY: "🚇",
+    # MOTIS API < v5 name of SUBURBAN
+    TransportMode.METRO: "🚆",
+    TransportMode.TRAM: "🚊",
+    TransportMode.BUS: "🚌",
+    TransportMode.COACH: "🚌",
+    TransportMode.FLEX: "🚐",
+    TransportMode.ODM: "🚐",
+    TransportMode.RIDE_SHARING: "🚗",
+    TransportMode.FERRY: "⛴️",
+    TransportMode.CABLE_CAR: "🚡",
+    TransportMode.AERIAL_LIFT: "🚡",
+    TransportMode.AREAL_LIFT: "🚡",
+    TransportMode.FUNICULAR: "🚞",
+    TransportMode.AIRPLANE: "✈️",
+}
+
+
+def _line_label(line: Line) -> str:
+    """Return the label of a line in the line selector, with a vehicle symbol.
+
+    The symbol tells e.g. a train from its replacement bus of the same name,
+    if the replacement bus is a route of its own. It shows the kind of vehicle
+    of the route: taken from the route type, the mode is only used if the route
+    type is unknown. Single trips of a route run with another vehicle (GTFS
+    trip_route_type) get no symbol of their own. The selector sorts by label,
+    so the lines are grouped by vehicle.
+    """
+    symbol = _CLASS_SYMBOL.get(vehicle_class(line.route_type) or "") or (
+        _MODE_SYMBOL.get(line.mode, "")
+    )
+    label = f"{line.route_short_name} - {line.head_sign}"
+
+    return f"{symbol} {label}" if symbol else label
+
+
+def _line_value(line: Line) -> str:
+    """Return the option value of a line in the line selector."""
+    return f"{line.route_id}---{line.direction_id}"
+
+
+def _preselect_lines(
+    selected: list[Line], available: list[Line]
+) -> tuple[list[str], dict[str, Line]]:
+    """Find the selector values of the configured lines.
+
+    Returns the values to preselect and, for lines whose route ID changed
+    (see helper.route_id_matches), the configured line per value. Saving keeps
+    the configured line for those, so the sensor keeps its unique ID. A line
+    found by its exact or prefixless route ID always wins over a changed one,
+    a changed route ID is only used for a value no other configured line has,
+    and the preselected values contain no duplicates.
+    """
+    available_values = {_line_value(line) for line in available}
+    found: dict[int, str] = {}
+    keep: dict[str, Line] = {}
+
+    for index, old_line in enumerate(selected):
+        value = _line_value(old_line)
+        if value in available_values:
+            found[index] = value
+            continue
+
+        # Try suffix match to migrate old route ID format (e.g. missing de-DELFI_ prefix)
+        migrated = next(
+            (
+                _line_value(line)
+                for line in available
+                if line.route_id.endswith(old_line.route_id)
+                and line.direction_id == old_line.direction_id
+            ),
+            None,
+        )
+        if migrated:
+            found[index] = migrated
+
+    for index, old_line in enumerate(selected):
+        if index in found:
+            continue
+
+        changed = next(
+            (
+                _line_value(line)
+                for line in available
+                if line.direction_id == old_line.direction_id
+                and _line_value(line) not in found.values()
+                and route_id_matches(
+                    line.route_id,
+                    old_line.route_id,
+                    line.route_type,
+                    line.route_short_name,
+                    old_line.route_short_name,
+                )
+            ),
+            None,
+        )
+        if changed:
+            found[index] = changed
+            keep[changed] = old_line
+
+    defaults = list(dict.fromkeys(found[i] for i in sorted(found)))
+    return defaults, keep
 
 
 async def _fetch_lines(stop_ids: list[str | Stop], unique: bool = True) -> list[Line]:
@@ -305,7 +443,7 @@ class DeparturesFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         line_list: list[SelectOptionDict] = [
             SelectOptionDict(
-                label=f"{line.route_short_name} - {line.head_sign}",
+                label=_line_label(line),
                 value=f"{line.route_id}---{line.direction_id}",
             )
             for line in self._lines
@@ -385,6 +523,7 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
         self._lines_available: list[Line] = [
             Line.from_dict(x) for x in config_entry.data.get(CONF_AVAILABLE_LINES, [])
         ]
+        self._lines_kept: dict[str, Line] = {}
 
         _LOGGER.debug("Start configuration")
 
@@ -400,6 +539,10 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
             lines_new_state: list[Line] = []
 
             for user_option in lines_user_choose:
+                if user_option in self._lines_kept:
+                    lines_new_state.append(self._lines_kept[user_option])
+                    continue
+
                 (route_id, direction_id) = user_option.split("---")
 
                 lines_new_state.append(
@@ -446,34 +589,15 @@ class DeparturesOptionsFlowHandler(config_entries.OptionsFlow):
 
         options_list: list[SelectOptionDict] = [
             SelectOptionDict(
-                label=f"{line.route_short_name} - {line.head_sign}",
+                label=_line_label(line),
                 value=f"{line.route_id}---{line.direction_id}",
             )
             for line in self._lines_available
         ]
 
-        available_values = {
-            f"{line.route_id}---{line.direction_id}"
-            for line in self._lines_available
-        }
-        valid_defaults = []
-        for old_line in self._lines_selected:
-            value = f"{old_line.route_id}---{old_line.direction_id}"
-            if value in available_values:
-                valid_defaults.append(value)
-            else:
-                # Try suffix match to migrate old route ID format (e.g. missing de-DELFI_ prefix)
-                migrated = next(
-                    (
-                        f"{line.route_id}---{line.direction_id}"
-                        for line in self._lines_available
-                        if line.route_id.endswith(old_line.route_id)
-                        and line.direction_id == old_line.direction_id
-                    ),
-                    None,
-                )
-                if migrated:
-                    valid_defaults.append(migrated)
+        valid_defaults, self._lines_kept = _preselect_lines(
+            self._lines_selected, self._lines_available
+        )
 
         return self.async_show_form(
             step_id="init",
